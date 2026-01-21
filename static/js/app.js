@@ -22,11 +22,21 @@ const App = () => {
     
     const [currentPage, setCurrentPage] = useState('home');
     const [ingredients, setIngredients] = useState({});
-    const [searchQuery, setSearchQuery] = useState('');
-    const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+    const [allIngredients, setAllIngredients] = useState({});
+const [searchQuery, setSearchQuery] = useState('');
+const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+    const [ingredientSearchQuery, setIngredientSearchQuery] = useState('');
+    const [ingredientSortConfig, setIngredientSortConfig] = useState({ key: null, direction: 'asc' });
     const [openIngredientRow, setOpenIngredientRow] = useState(null);
     const [dishIngredients, setDishIngredients] = useState({});
     const [currentEditDishId, setCurrentEditDishId] = useState(null);
+    const [editingIngredient, setEditingIngredient] = useState(null);
+    const [newIngredient, setNewIngredient] = useState({
+        name: '',
+        proteins: 0,
+        fats: 0,
+        carbohydrates: 0
+    });
     
     // Загрузка данных о блюдах
     useEffect(() => {
@@ -41,6 +51,51 @@ const App = () => {
             .then(response => response.json())
             .then(data => setGoals(data));
     }, []);
+    
+    // Загрузка всех ингредиентов при переходе на страницу
+    useEffect(() => {
+        if (currentPage === 'ingredients') {
+            fetch('/api/ingredients')
+                .then(response => response.json())
+                .then(data => {
+                    // Проверяем, является ли ответ массивом
+                    if (Array.isArray(data)) {
+                        // Преобразуем массив ингредиентов в объект с названиями в качестве ключей
+                        // И извлекаем данные о питательных веществах на верхний уровень
+                        const ingredientsMap = data.reduce((acc, item) => {
+                            acc[item.name] = {
+                                calories: item.nutrition.calories,
+                                proteins: item.nutrition.proteins,
+                                fats: item.nutrition.fats,
+                                carbohydrates: item.nutrition.carbohydrates
+                            };
+                            return acc;
+                        }, {});
+                        setAllIngredients(ingredientsMap);
+                    } else {
+                        // Если ответ уже объект, проверяем структуру и преобразуем при необходимости
+                        const ingredientsMap = {};
+                        Object.entries(data).forEach(([name, item]) => {
+                            if (item.nutrition) {
+                                ingredientsMap[name] = {
+                                    calories: item.nutrition.calories,
+                                    proteins: item.nutrition.proteins,
+                                    fats: item.nutrition.fats,
+                                    carbohydrates: item.nutrition.carbohydrates
+                                };
+                            } else {
+                                ingredientsMap[name] = item;
+                            }
+                        });
+                        setAllIngredients(ingredientsMap);
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка загрузки ингредиентов:', error);
+                    setAllIngredients({});
+                });
+        }
+    }, [currentPage]);
     
     // Функция для получения цвета ячейки в зависимости от значения
     const getPercentageCellClass = (value) => {
@@ -82,8 +137,192 @@ const App = () => {
         }
     };
     
-    // Сортировка и фильтрация данных
-    // Расчет распределения калорийности по макронутриентам
+    // Подготовка данных для таблицы ингредиентов
+    const ingredientsArray = React.useMemo(() => {
+        return Object.entries(allIngredients).map(([name, data]) => ({
+            name,
+            ...data
+        }));
+    }, [allIngredients]);
+
+    const filteredIngredients = React.useMemo(() => {
+        let filtered = [...ingredientsArray];
+        
+        if (ingredientSearchQuery.length >= 2) {
+            filtered = filtered.filter(ing => 
+                ing.name.toLowerCase().includes(ingredientSearchQuery.toLowerCase())
+            );
+        }
+        
+        return filtered;
+    }, [ingredientsArray, ingredientSearchQuery]);
+
+    const sortedIngredients = React.useMemo(() => {
+        let sorted = [...filteredIngredients];
+        
+        if (ingredientSortConfig.key !== null) {
+            sorted.sort((a, b) => {
+                let aValue = a[ingredientSortConfig.key];
+                let bValue = b[ingredientSortConfig.key];
+                
+                if (aValue < bValue) {
+                    return ingredientSortConfig.direction === 'asc' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return ingredientSortConfig.direction === 'asc' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        
+        return sorted;
+    }, [filteredIngredients, ingredientSortConfig]);
+
+    const requestIngredientSort = (key) => {
+        let direction = 'asc';
+        if (ingredientSortConfig.key === key && ingredientSortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setIngredientSortConfig({ key, direction });
+    };
+    
+    // Расчет калорий из БЖУ
+    const calculateCalories = (proteins, fats, carbohydrates) => {
+        return proteins * 4 + fats * 9 + carbohydrates * 4;
+    };
+    
+    // Обработчик добавления нового ингредиента
+    const handleAddNewIngredient = () => {
+        if (!newIngredient.name.trim()) {
+            alert('Введите название ингредиента');
+            return;
+        }
+        
+        const calories = calculateCalories(
+            newIngredient.proteins, 
+            newIngredient.fats, 
+            newIngredient.carbohydrates
+        );
+        
+        const ingredientData = {
+            name: newIngredient.name,
+            nutrition: {
+                calories,
+                proteins: newIngredient.proteins,
+                fats: newIngredient.fats,
+                carbohydrates: newIngredient.carbohydrates
+            }
+        };
+        
+        fetch('/api/ingredients', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(ingredientData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Ошибка при сохранении');
+            }
+            return response.json();
+        })
+        .then(() => {
+            const updatedIngredients = {
+                ...allIngredients,
+                [newIngredient.name]: {
+                    ...newIngredient,
+                    calories
+                }
+            };
+            setAllIngredients(updatedIngredients);
+            
+            // Сбрасываем форму
+            setNewIngredient({
+                name: '',
+                proteins: 0,
+                fats: 0,
+                carbohydrates: 0
+            });
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Не удалось сохранить ингредиент');
+        });
+    };
+    
+    // Обработчик сохранения измененного ингредиента
+    const handleSaveIngredient = (ingredient) => {
+        const calories = calculateCalories(
+            ingredient.proteins, 
+            ingredient.fats, 
+            ingredient.carbohydrates
+        );
+        
+        const ingredientData = {
+            nutrition: {
+                calories,
+                proteins: ingredient.proteins,
+                fats: ingredient.fats,
+                carbohydrates: ingredient.carbohydrates
+            }
+        };
+        
+        fetch(`/api/ingredients/${encodeURIComponent(ingredient.name)}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(ingredientData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Ошибка при обновлении');
+            }
+            return response.json();
+        })
+        .then(() => {
+            const updatedIngredients = {
+                ...allIngredients,
+                [ingredient.name]: {
+                    ...ingredient,
+                    calories
+                }
+            };
+            setAllIngredients(updatedIngredients);
+            setEditingIngredient(null);
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Не удалось обновить ингредиент');
+        });
+    };
+    
+    // Обработчик удаления ингредиента
+    const handleDeleteIngredient = (name) => {
+        if (confirm(`Удалить ингредиент "${name}"?`)) {
+            fetch(`/api/ingredients/${encodeURIComponent(name)}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Ошибка при удалении');
+                }
+                return response.json();
+            })
+            .then(() => {
+                const {[name]: deleted, ...rest} = allIngredients;
+                setAllIngredients(rest);
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                alert('Не удалось удалить ингредиент');
+            });
+        }
+    };
+
+// Сортировка и фильтрация данных
+// Расчет распределения калорийности по макронутриентам
 const calculateMacronutrientDistribution = (protein, fat, carbohydrates) => {
     // Рассчитываем калории по формуле: белки * 4 + жиры * 9 + углеводы * 4
     const proteinCalories = protein * 4;
@@ -926,26 +1165,234 @@ bValue = bDist[field];
 {currentPage === 'ingredients' && (
     <div className="card">
         <div className="card-body">
-            <h3 className="card-title">Список продуктов</h3>
-            {/* Список блюд */}
-            <div className="mb-4">
-                <h4>Блюда:</h4>
-                <ul className="list-group">
-                    {selectedDishes.map(dish => (
-                        <li key={dish.id} className="list-group-item">
-                            {dish.name} - {dish.portions || 1} порций
-                        </li>
-                    ))}
-                </ul>
+            <h3 className="card-title">Список ингредиентов</h3>
+            <div className="mb-3">
+                <input 
+                    type="text" 
+                    className="form-control" 
+                    placeholder="Поиск по названию (минимум 2 символа)..." 
+                    value={ingredientSearchQuery}
+                    onChange={(e) => setIngredientSearchQuery(e.target.value)}
+                />
+                {ingredientSearchQuery && ingredientSearchQuery.length < 2 && (
+                    <small className="text-muted">Введите минимум 2 символа для поиска</small>
+                )}
             </div>
-            {/* Список ингредиентов */}
-            <ul className="list-group">
-                {Object.entries(ingredients).map(([name, data]) => (
-                    <li key={name} className="list-group-item">
-                        {name}: {data.amount} {data.unit}
-                    </li>
-                ))}
-            </ul>
+            <div className="table-responsive">
+                <table className="table table-striped table-hover">
+                    <thead>
+                        <tr className="align-middle">
+                            <th onClick={() => requestIngredientSort('name')} style={{ cursor: 'pointer', width: '25%' }}>
+                                Название {ingredientSortConfig.key === 'name' && (ingredientSortConfig.direction === 'asc' ? '↑' : '↓')}
+                            </th>
+                            <th onClick={() => requestIngredientSort('calories')} style={{ cursor: 'pointer', width: '15%' }}>
+                                Калории {ingredientSortConfig.key === 'calories' && (ingredientSortConfig.direction === 'asc' ? '↑' : '↓')}
+                            </th>
+                            <th onClick={() => requestIngredientSort('proteins')} style={{ cursor: 'pointer', width: '15%' }}>
+                                Белки {ingredientSortConfig.key === 'proteins' && (ingredientSortConfig.direction === 'asc' ? '↑' : '↓')}
+                            </th>
+                            <th onClick={() => requestIngredientSort('fats')} style={{ cursor: 'pointer', width: '15%' }}>
+                                Жиры {ingredientSortConfig.key === 'fats' && (ingredientSortConfig.direction === 'asc' ? '↑' : '↓')}
+                            </th>
+                            <th onClick={() => requestIngredientSort('carbohydrates')} style={{ cursor: 'pointer', width: '15%' }}>
+                                Углеводы {ingredientSortConfig.key === 'carbohydrates' && (ingredientSortConfig.direction === 'asc' ? '↑' : '↓')}
+                            </th>
+                            <th style={{ width: '15%' }}>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {/* Форма для добавления нового ингредиента */}
+                        <tr className="new-ingredient-row align-middle">
+                            <td>
+                                <input 
+                                    type="text" 
+                                    className="form-control form-control-sm" 
+                                    value={newIngredient.name}
+                                    onChange={(e) => setNewIngredient({...newIngredient, name: e.target.value})}
+                                    placeholder="Название"
+                                    autoFocus
+                                />
+                            </td>
+                            <td>
+                                {calculateCalories(newIngredient.proteins, newIngredient.fats, newIngredient.carbohydrates).toFixed(1)} ккал
+                            </td>
+                            <td>
+                                <input 
+                                    type="number" 
+                                    className="form-control form-control-sm" 
+                                    value={newIngredient.proteins}
+                                    onChange={(e) => {
+                                        const proteins = parseFloat(e.target.value) || 0;
+                                        setNewIngredient({
+                                            ...newIngredient,
+                                            proteins
+                                        });
+                                    }}
+                                    step="0.1"
+                                    min="0"
+                                />
+                            </td>
+                            <td>
+                                <input 
+                                    type="number" 
+                                    className="form-control form-control-sm" 
+                                    value={newIngredient.fats}
+                                    onChange={(e) => {
+                                        const fats = parseFloat(e.target.value) || 0;
+                                        setNewIngredient({
+                                            ...newIngredient,
+                                            fats
+                                        });
+                                    }}
+                                    step="0.1"
+                                    min="0"
+                                />
+                            </td>
+                            <td>
+                                <input 
+                                    type="number" 
+                                    className="form-control form-control-sm" 
+                                    value={newIngredient.carbohydrates}
+                                    onChange={(e) => {
+                                        const carbs = parseFloat(e.target.value) || 0;
+                                        setNewIngredient({
+                                            ...newIngredient,
+                                            carbohydrates: carbs
+                                        });
+                                    }}
+                                    step="0.1"
+                                    min="0"
+                                />
+                            </td>
+                            <td>
+                                <button 
+                                    className="btn btn-success btn-sm w-100"
+                                    onClick={handleAddNewIngredient}
+                                >
+                                    Добавить
+                                </button>
+                            </td>
+                        </tr>
+
+                        {sortedIngredients.map((ing, index) => {
+                            if (editingIngredient && editingIngredient.name === ing.name) {
+                                return (
+                                    <tr key={index} className="editing-row align-middle">
+                                        <td>
+                                            <input 
+                                                type="text" 
+                                                className="form-control form-control-sm" 
+                                                value={editingIngredient.name}
+                                                onChange={(e) => setEditingIngredient({...editingIngredient, name: e.target.value})}
+                                            />
+                                        </td>
+                                        <td>
+                                            {calculateCalories(
+                                                editingIngredient.proteins, 
+                                                editingIngredient.fats, 
+                                                editingIngredient.carbohydrates
+                                            ).toFixed(1)} ккал
+                                        </td>
+                                        <td>
+                                            <input 
+                                                type="number" 
+                                                className="form-control form-control-sm" 
+                                                value={editingIngredient.proteins}
+                                                onChange={(e) => {
+                                                    const proteins = parseFloat(e.target.value) || 0;
+                                                    setEditingIngredient({
+                                                        ...editingIngredient,
+                                                        proteins
+                                                    });
+                                                }}
+                                                step="0.1"
+                                                min="0"
+                                            />
+                                        </td>
+                                        <td>
+                                            <input 
+                                                type="number" 
+                                                className="form-control form-control-sm" 
+                                                value={editingIngredient.fats}
+                                                onChange={(e) => {
+                                                    const fats = parseFloat(e.target.value) || 0;
+                                                    setEditingIngredient({
+                                                        ...editingIngredient,
+                                                        fats
+                                                    });
+                                                }}
+                                                step="0.1"
+                                                min="0"
+                                            />
+                                        </td>
+                                        <td>
+                                            <input 
+                                                type="number" 
+                                                className="form-control form-control-sm" 
+                                                value={editingIngredient.carbohydrates}
+                                                onChange={(e) => {
+                                                    const carbs = parseFloat(e.target.value) || 0;
+                                                    setEditingIngredient({
+                                                        ...editingIngredient,
+                                                        carbohydrates: carbs
+                                                    });
+                                                }}
+                                                step="0.1"
+                                                min="0"
+                                            />
+                                        </td>
+                                        <td>
+                                            <div className="d-flex gap-1">
+                                                <button 
+                                                    className="btn btn-success btn-sm flex-fill"
+                                                    onClick={() => handleSaveIngredient(editingIngredient)}
+                                                >
+                                                    Сохранить
+                                                </button>
+                                                <button 
+                                                    className="btn btn-secondary btn-sm flex-fill"
+                                                    onClick={() => setEditingIngredient(null)}
+                                                >
+                                                    Отмена
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            }
+                            
+                            return (
+                                <tr key={index} className="align-middle">
+                                    <td>{ing.name}</td>
+                                    <td>{ing.calories.toFixed(1)} ккал</td>
+                                    <td>{ing.proteins.toFixed(1)} г</td>
+                                    <td>{ing.fats.toFixed(1)} г</td>
+                                    <td>{ing.carbohydrates.toFixed(1)} г</td>
+                                    <td>
+                                        <div className="d-flex gap-1">
+                                            <button 
+                                                className="btn btn-primary btn-sm flex-fill"
+                                                onClick={() => setEditingIngredient(ing)}
+                                            >
+                                                Редактировать
+                                            </button>
+                                            <button 
+                                                className="btn btn-danger btn-sm flex-fill"
+                                                onClick={() => handleDeleteIngredient(ing.name)}
+                                            >
+                                                Удалить
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+                {sortedIngredients.length === 0 && (
+                    <p className="text-center text-muted">Ингредиенты не найдены</p>
+                )}
+            </div>
         </div>
     </div>
 )}

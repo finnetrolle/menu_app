@@ -74,6 +74,79 @@ async def get_ingredients(request):
         })
     return json(ingredients_list)
 
+# Добавление нового ингредиента
+@app.route("/api/ingredients", methods=["POST"])
+async def add_ingredient(request):
+    global ingredients
+    data = request.json
+    name = data.get("name")
+    nutrition_data = data.get("nutrition", {})
+    
+    if not name or not nutrition_data:
+        return json({"error": "Invalid data"}, status=400)
+    
+    # Создаем объект NutritionInfo
+    nutrition = NutritionInfo(
+        calories=nutrition_data.get("calories", 0),
+        proteins=nutrition_data.get("proteins", 0),
+        fats=nutrition_data.get("fats", 0),
+        carbohydrates=nutrition_data.get("carbohydrates", 0)
+    )
+    
+    # Создаем и добавляем ингредиент в глобальный словарь
+    new_ingredient = Ingredient(name=name, nutrition=nutrition)
+    ingredients[name] = new_ingredient
+    
+    # Сохраняем обновленный словарь напрямую
+    ingredients_loader.save(ingredients)
+    
+    return json({"status": "success"})
+
+# Обновление существующего ингредиента
+@app.route("/api/ingredients/<name:str>", methods=["PUT"])
+async def update_ingredient(request, name):
+    global ingredients
+    if name not in ingredients:
+        return json({"error": "Ingredient not found"}, status=404)
+    
+    data = request.json
+    nutrition_data = data.get("nutrition", {})
+    
+    if not nutrition_data:
+        return json({"error": "Invalid data"}, status=400)
+    
+    # Создаем обновленный объект NutritionInfo
+    nutrition = NutritionInfo(
+        calories=nutrition_data.get("calories", 0),
+        proteins=nutrition_data.get("proteins", 0),
+        fats=nutrition_data.get("fats", 0),
+        carbohydrates=nutrition_data.get("carbohydrates", 0)
+    )
+    
+    # Обновляем ингредиент в глобальном словаре
+    updated_ingredient = Ingredient(name=name, nutrition=nutrition)
+    ingredients[name] = updated_ingredient
+    
+    # Сохраняем обновленный словарь напрямую
+    ingredients_loader.save(ingredients)
+    
+    return json({"status": "success"})
+
+# Удаление ингредиента
+@app.route("/api/ingredients/<name:str>", methods=["DELETE"])
+async def delete_ingredient(request, name):
+    global ingredients
+    if name not in ingredients:
+        return json({"error": "Ingredient not found"}, status=404)
+    
+    # Удаляем ингредиент из глобального словаря
+    del ingredients[name]
+    
+    # Сохраняем обновленный словарь напрямую
+    ingredients_loader.save(ingredients)
+    
+    return json({"status": "success"})
+
 # Calculate actual nutritional values for each dish and prepare data for frontend
 # Using the nutrition calculator to handle calculations
 nutrition_calculator = NutritionCalculator()

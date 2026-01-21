@@ -48,3 +48,33 @@ class IngredientDataLoader(IngredientLoaderInterface):
         finally:
             session.close()
         return ingredients
+
+    def save(self, ingredients: Dict[str, Ingredient]) -> None:
+        """
+        Save ingredients to database.
+        
+        Args:
+            ingredients: Dictionary of Ingredient objects to save, keyed by name
+        """
+        session = get_session()
+        try:
+            # Удаляем все существующие ингредиенты
+            session.query(DbIngredient).delete()
+            
+            # Добавляем новые ингредиенты
+            for name, ingredient in ingredients.items():
+                nutrition = ingredient.nutrition
+                db_ingredient = DbIngredient(
+                    name=name,
+                    protein_g=nutrition.proteins,
+                    fat_g=nutrition.fats,
+                    carbohydrates_g=nutrition.carbohydrates
+                )
+                session.add(db_ingredient)
+            
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
