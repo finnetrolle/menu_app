@@ -23,7 +23,7 @@ nutrient_goals = {
 # Инициализация данных при запуске
 ingredients_loader = IngredientDataLoader()
 ingredients = ingredients_loader.load_ingredients()
-dishes_loader = DishLoader("dishes")
+dishes_loader = DishLoader()
 raw_dishes = dishes_loader.load_dishes(ingredient_dict=ingredients)
 
 # Инициализируем калькулятор питания

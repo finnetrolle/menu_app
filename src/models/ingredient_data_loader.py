@@ -1,61 +1,50 @@
 #!/usr/bin/env python3
 """
-Ingredient data loader service for loading ingredients from CSV files.
+Ingredient data loader service for loading ingredients from database.
 """
 
-import csv
 from typing import Dict
 from src.models import Ingredient, NutritionInfo
 from src.models.interfaces import IngredientLoaderInterface
+from src.database import get_session, Ingredient as DbIngredient
 
 
 class IngredientDataLoader(IngredientLoaderInterface):
     """
-    Service class for loading ingredient data from CSV files.
-    
-    This class follows the Single Responsibility Principle by encapsulating
-    all ingredient data loading logic in one place.
+    Service class for loading ingredient data from database.
     """
     
     def load_ingredients(self) -> Dict[str, Ingredient]:
         """
-        Load ingredients from a CSV file.
+        Load ingredients from database.
         
         Returns:
-            Dict[str, Ingredient]: Dictionary of Ingredient objects loaded from the CSV file,
+            Dict[str, Ingredient]: Dictionary of Ingredient objects loaded from database,
                                    keyed by ingredient name
-            
-        Raises:
-            FileNotFoundError: If the specified CSV file does not exist
-            Exception: If there's an error during CSV parsing or data conversion
         """
+        session = get_session()
         ingredients = {}
-        
         try:
-            with open("data/ingredients.csv", 'r', encoding='utf-8') as file:
-                reader = csv.DictReader(file)
+            for db_ingredient in session.query(DbIngredient).all():
+                # Calculate calories (4 kcal/g protein, 9 kcal/g fat, 4 kcal/g carbs)
+                calories = (
+                    4 * db_ingredient.protein_g +
+                    9 * db_ingredient.fat_g +
+                    4 * db_ingredient.carbohydrates_g
+                )
                 
-                # Create dictionary of ingredients from CSV data, using name as key
-                for row in reader:
-                    # Handle empty values by converting them to 0.0
-                    protein_g = row["protein_g"].strip()
-                    fat_g = row["fat_g"].strip()
-                    carbohydrates_g = row["carbohydrates_g"].strip()
-                    
-                    # Convert to float, handling empty strings
-                    protein_value = float(protein_g) if protein_g else 0.0
-                    fat_value = float(fat_g) if fat_g else 0.0
-                    carbohydrates_value = float(carbohydrates_g) if carbohydrates_g else 0.0
-                    
-                    ingredient = Ingredient(
-                        name=row["name"],
-                        nutrition = NutritionInfo.from_protein_fat_carb(protein_value, fat_value, carbohydrates_value)
-                    )
-                    ingredients[row["name"]] = ingredient
-                    
-        except FileNotFoundError:
-            raise FileNotFoundError("Ingredient CSV file not found: data/ingredients.csv")
-        except Exception as e:
-            raise Exception(f"Error loading ingredients from CSV file: {e}")
-        
+                nutrition = NutritionInfo(
+                    proteins=db_ingredient.protein_g,
+                    fats=db_ingredient.fat_g,
+                    carbohydrates=db_ingredient.carbohydrates_g,
+                    calories=calories
+                )
+                
+                ingredient = Ingredient(
+                    name=db_ingredient.name,
+                    nutrition=nutrition
+                )
+                ingredients[db_ingredient.name] = ingredient
+        finally:
+            session.close()
         return ingredients
