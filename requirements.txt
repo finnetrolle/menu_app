@@ -1,0 +1,4 @@
+Sanic==24.12.0
+sanic-ext==24.12.0
+pytest
+websockets==12.0

@@ -1,0 +1,25 @@
+{
+  "name": "Шин Рамен",
+  "ingredients": [
+    {
+      "name": "Shin Ramen",
+      "amount": 60
+    },
+    {
+      "name": "майонез рикко провансаль",
+      "amount": 15
+    },
+    {
+      "name": "Чеснок",
+      "amount": 20
+    },
+    {
+      "name": "Лук зеленый",
+      "amount": 50
+    },
+    {
+      "name": "Вода",
+      "amount": 300
+    }
+  ]
+}

@@ -1,0 +1,460 @@
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f5f7fa;
+    color: #333;
+}
+
+.app-header {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.form-container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.form-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.form-group input {
+    flex: 1;
+    min-width: 150px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.form-group button {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.form-group button:hover {
+    background-color: #45a049;
+}
+
+.menu-container {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.left-panel, .right-panel {
+    flex: 1;
+    min-width: 300px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    padding: 20px;
+}
+
+.right-panel {
+    min-width: 350px;
+}
+
+.panel-title {
+    font-size: 18px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.dish-list {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.dish-item {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    user-select: none;
+    display: flex;
+    flex-direction: column;
+    min-height: 80px;
+}
+
+.dish-item:hover {
+    background-color: #f0f8ff;
+}
+
+.dish-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+/* Добавленные стили для компактного отображения */
+.card-title {
+    font-size: 14px;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+}
+
+.dish-weight {
+    font-size: 0.8em;
+    color: #6c757d;
+    margin-left: 4px;
+}
+
+.card-text {
+    margin-bottom: 4px;
+    font-size: 12px;
+}
+
+.nutrient-bar {
+    height: 16px;
+    margin-bottom: 4px;
+}
+
+.nutrient-bar {
+    height: 20px;
+    background-color: #f0f0f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    position: relative;
+    flex-grow: 1;
+}
+
+.nutrient-bar-inner {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.protein-bar {
+    background-color: #2196F3; /* Синий для белков */
+    width: 33%;
+}
+
+.fat-bar {
+    background-color: #f44336; /* Красный для жиров */
+    width: 33%;
+}
+
+.carb-bar {
+    background-color: #4CAF50; /* Зеленый для углеводов */
+    width: 33%;
+}
+
+.dish-details {
+    font-size: 14px;
+    color: #666;
+}
+
+/* Добавлено: стили для кнопки "Добавить" */
+/* Стили для компактных кнопок в карточке */
+.button-group {
+    display: flex;
+    gap: 4px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+}
+
+.edit-button, .add-button {
+    padding: 2px 5px;
+    border-radius: 3px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.edit-button {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.add-button {
+    background-color: #198754;
+    color: white;
+}
+
+.add-button:hover {
+    background-color: #218838;
+}
+
+/* Добавлено: стили для карточек с кнопкой */
+.card-with-button {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* Добавлено: улучшенный дизайн для карточек */
+.card-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-footer {
+    margin-top: auto;
+    padding-top: 10px;
+}
+
+.selected-dish {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.portion-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.portion-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: none;
+    background-color: #e0e0e0;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.portion-btn:hover {
+    background-color: #d0d0d0;
+}
+
+.remove-btn {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.remove-btn:hover {
+    background-color: #d32f2f;
+}
+
+.nutrient-summary {
+    background-color: #e8f5e9;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.nutrient-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+}
+
+.nutrient-value {
+    font-weight: bold;
+}
+
+.nutrient-value.high {
+    color: #f44336;
+}
+
+.nutrient-value.low {
+    color: #4CAF50;
+}
+
+.nutrient-value.normal {
+    color: #333;
+}
+
+.done-btn {
+    padding: 15px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 18px;
+    width: 100%;
+    margin-top: 20px;
+}
+
+.done-btn:hover {
+    background-color: #45a049;
+}
+
+.ingredients-container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-top: 20px;
+}
+
+.ingredients-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.ingredients-item {
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+/* Drag and Drop стили */
+.dragging {
+    opacity: 0.5;
+    background-color: #e3f2fd;
+}
+
+.drag-over {
+    border: 2px dashed #2196F3;
+}
+
+@media (max-width: 768px) {
+    .menu-container {
+        flex-direction: column;
+    }
+    
+    .form-group {
+        flex-direction: column;
+    }
+}
+
+/* Цветовые индикаторы для таблицы блюд */
+.bg-success-subtle {
+  background-color: rgba(40, 167, 69, 0.15) !important;
+}
+
+.bg-warning-subtle {
+  background-color: rgba(255, 193, 7, 0.25) !important;
+}
+
+.bg-danger-subtle {
+  background-color: rgba(220, 53, 69, 0.25) !important;
+}
+
+/* Стили для блока редактирования блюда */
+.edit-container {
+  display: flex;
+  height: 33vh;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.dish-stats {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.chart-container {
+  flex: 1;
+  max-width: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#nutrition-chart {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.bg-info-subtle {
+  background-color: rgba(23, 162, 184, 0.15) !important;
+}
+
+.bg-warning-subtle {
+  background-color: rgba(255, 193, 7, 0.15) !important;
+}
+
+.bg-danger-subtle {
+  background-color: rgba(220, 53, 69, 0.15) !important;
+}
+
+/* Курсор для кликабельных элементов */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Контейнер для статистики и диаграммы */
+.stats-chart-container {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+/* Стили для поиска ингредиентов */
+.search-ingredient {
+    margin-bottom: 15px;
+}
+
+#search-results {
+    position: relative;
+    z-index: 1000;
+}
+
+.search-results-list {
+    list-style: none;
+    padding: 0;
+    margin: 5px 0 0 0;
+    max-height: 200px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.search-result-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+}
+
+.search-result-item:hover {
+    background-color: #f0f8ff;
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
