@@ -103,11 +103,20 @@ async def add_ingredient(request):
     return json({"status": "success"})
 
 # Обновление существующего ингредиента
-@app.route("/api/ingredients/<name:str>", methods=["PUT"])
-async def update_ingredient(request, name):
+@app.route("/api/ingredients/<id:int>", methods=["PUT"])
+async def update_ingredient(request, id):
     global ingredients
-    if name not in ingredients:
+    # Генерируем список ингредиентов с ID как в GET-запросе
+    ingredients_list = []
+    for idx, (name, ingredient) in enumerate(ingredients.items(), 1):
+        ingredients_list.append({"id": idx, "name": name})
+    
+    # Находим ингредиент по ID
+    target = next((item for item in ingredients_list if item["id"] == id), None)
+    if not target:
         return json({"error": "Ingredient not found"}, status=404)
+    
+    name = target["name"]
     
     data = request.json
     nutrition_data = data.get("nutrition", {})
@@ -133,17 +142,29 @@ async def update_ingredient(request, name):
     return json({"status": "success"})
 
 # Удаление ингредиента
-@app.route("/api/ingredients/<name:str>", methods=["DELETE"])
-async def delete_ingredient(request, name):
+@app.route("/api/ingredients/<id:int>", methods=["DELETE"])
+async def delete_ingredient(request, id):
     global ingredients
-    if name not in ingredients:
+    # Генерируем список ингредиентов с ID как в GET-запросе
+    ingredients_list = []
+    for idx, (name, ingredient) in enumerate(ingredients.items(), 1):
+        ingredients_list.append({"id": idx, "name": name})
+    
+    # Находим ингредиент по ID
+    target = next((item for item in ingredients_list if item["id"] == id), None)
+    if not target:
         return json({"error": "Ingredient not found"}, status=404)
+    
+    name = target["name"]
     
     # Удаляем ингредиент из глобального словаря
     del ingredients[name]
     
     # Сохраняем обновленный словарь напрямую
     ingredients_loader.save(ingredients)
+    
+    # Перезагружаем ингредиенты из базы данных
+    ingredients = ingredients_loader.load_ingredients()
     
     return json({"status": "success"})
 
@@ -328,6 +349,7 @@ async def add_dish_page(request):
 
 @app.route("/api/dish/<dish_id:int>", methods=["POST"])
 async def update_dish(request, dish_id):
+    global raw_dishes
     if dish_id <= 0 or dish_id > len(raw_dishes):
         return json({"error": "Invalid dish ID"}, status=404)
     
@@ -337,7 +359,6 @@ async def update_dish(request, dish_id):
     dish = raw_dishes[dish_id - 1]
     
     # Обновляем веса ингредиентов
-    # Полностью заменяем ингредиенты, чтобы учесть новые добавленные
     dish.ingredients = {ing["name"]: ing["amount"] for ing in new_ingredients}
     
     # Сохраняем обновленное блюдо
@@ -346,6 +367,9 @@ async def update_dish(request, dish_id):
         "ingredients": dish.ingredients
     }
     dishes_loader.save(dish_data)
+    
+    # Обновляем raw_dishes из базы данных
+    raw_dishes = dishes_loader.load_dishes(ingredient_dict=ingredients)
     update_dishes_data()
     
     return json({"status": "success"})

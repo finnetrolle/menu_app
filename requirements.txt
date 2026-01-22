@@ -3,3 +3,4 @@ sanic-ext==24.12.0
 pytest
 websockets==12.0
 sqlalchemy
+sanic-testing
