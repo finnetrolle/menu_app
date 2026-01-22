@@ -22,7 +22,7 @@ const App = () => {
     
     const [currentPage, setCurrentPage] = useState('home');
     const [ingredients, setIngredients] = useState({});
-    const [allIngredients, setAllIngredients] = useState({});
+    const [allIngredients, setAllIngredients] = useState([]);
 const [searchQuery, setSearchQuery] = useState('');
 const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
     const [ingredientSearchQuery, setIngredientSearchQuery] = useState('');
@@ -58,41 +58,21 @@ const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
             fetch('/api/ingredients')
                 .then(response => response.json())
                 .then(data => {
-                    // Проверяем, является ли ответ массивом
                     if (Array.isArray(data)) {
-                        // Преобразуем массив ингредиентов в объект с названиями в качестве ключей
-                        // И извлекаем данные о питательных веществах на верхний уровень
-                        const ingredientsMap = data.reduce((acc, item) => {
-                            acc[item.name] = {
-                                calories: item.nutrition.calories,
-                                proteins: item.nutrition.proteins,
-                                fats: item.nutrition.fats,
-                                carbohydrates: item.nutrition.carbohydrates
-                            };
-                            return acc;
-                        }, {});
-                        setAllIngredients(ingredientsMap);
+                        setAllIngredients(data);
                     } else {
-                        // Если ответ уже объект, проверяем структуру и преобразуем при необходимости
-                        const ingredientsMap = {};
-                        Object.entries(data).forEach(([name, item]) => {
-                            if (item.nutrition) {
-                                ingredientsMap[name] = {
-                                    calories: item.nutrition.calories,
-                                    proteins: item.nutrition.proteins,
-                                    fats: item.nutrition.fats,
-                                    carbohydrates: item.nutrition.carbohydrates
-                                };
-                            } else {
-                                ingredientsMap[name] = item;
-                            }
-                        });
-                        setAllIngredients(ingredientsMap);
+                        // Если ответ не массив, преобразуем в массив
+                        const ingredientsArray = Object.values(data).map(item => ({
+                            id: item.id,
+                            name: item.name,
+                            nutrition: item.nutrition
+                        }));
+                        setAllIngredients(ingredientsArray);
                     }
                 })
                 .catch(error => {
                     console.error('Ошибка загрузки ингредиентов:', error);
-                    setAllIngredients({});
+                    setAllIngredients([]);
                 });
         }
     }, [currentPage]);
@@ -139,9 +119,13 @@ const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
     
     // Подготовка данных для таблицы ингредиентов
     const ingredientsArray = React.useMemo(() => {
-        return Object.entries(allIngredients).map(([name, data]) => ({
-            name,
-            ...data
+        return allIngredients.map(item => ({
+            id: item.id,
+            name: item.name,
+            calories: item.nutrition.calories,
+            proteins: item.nutrition.proteins,
+            fats: item.nutrition.fats,
+            carbohydrates: item.nutrition.carbohydrates
         }));
     }, [allIngredients]);
 
@@ -227,14 +211,18 @@ const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
             }
             return response.json();
         })
-        .then(() => {
-            const updatedIngredients = {
-                ...allIngredients,
-                [newIngredient.name]: {
-                    ...newIngredient,
-                    calories
+        .then(newIngredientData => {
+            // Добавляем новый ингредиент в массив
+            const updatedIngredients = [...allIngredients, {
+                id: newIngredientData.id,
+                name: newIngredient.name,
+                nutrition: {
+                    calories,
+                    proteins: newIngredient.proteins,
+                    fats: newIngredient.fats,
+                    carbohydrates: newIngredient.carbohydrates
                 }
-            };
+            }];
             setAllIngredients(updatedIngredients);
             
             // Сбрасываем форму
@@ -268,7 +256,7 @@ const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
             }
         };
         
-        fetch(`/api/ingredients/${encodeURIComponent(ingredient.name)}`, {
+        fetch(`/api/ingredients/${ingredient.id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -282,13 +270,9 @@ const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
             return response.json();
         })
         .then(() => {
-            const updatedIngredients = {
-                ...allIngredients,
-                [ingredient.name]: {
-                    ...ingredient,
-                    calories
-                }
-            };
+            const updatedIngredients = allIngredients.map(item => 
+                item.id === ingredient.id ? { ...item, nutrition: ingredientData.nutrition } : item
+            );
             setAllIngredients(updatedIngredients);
             setEditingIngredient(null);
         })
@@ -299,9 +283,9 @@ const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
     };
     
     // Обработчик удаления ингредиента
-    const handleDeleteIngredient = (name) => {
-        if (confirm(`Удалить ингредиент "${name}"?`)) {
-            fetch(`/api/ingredients/${encodeURIComponent(name)}`, {
+    const handleDeleteIngredient = (ingredient) => {
+        if (confirm(`Удалить ингредиент "${ingredient.name}"?`)) {
+            fetch(`/api/ingredients/${ingredient.id}`, {
                 method: 'DELETE'
             })
             .then(response => {
@@ -311,8 +295,8 @@ const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
                 return response.json();
             })
             .then(() => {
-                const {[name]: deleted, ...rest} = allIngredients;
-                setAllIngredients(rest);
+                const updatedIngredients = allIngredients.filter(item => item.id !== ingredient.id);
+                setAllIngredients(updatedIngredients);
             })
             .catch(error => {
                 console.error('Ошибка:', error);
@@ -1378,7 +1362,7 @@ bValue = bDist[field];
                                             </button>
                                             <button 
                                                 className="btn btn-danger btn-sm flex-fill"
-                                                onClick={() => handleDeleteIngredient(ing.name)}
+                                                onClick={() => handleDeleteIngredient(ing)}
                                             >
                                                 Удалить
                                             </button>
