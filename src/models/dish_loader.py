@@ -33,10 +33,11 @@ class DishLoader(DishLoaderInterface):
         dishes = []
         try:
             for db_dish in session.query(DbDish).all():
-                ingredients = {
-                    di.ingredient.name: di.amount 
-                    for di in db_dish.ingredients
-                }
+                ingredients = {}
+                for di in db_dish.ingredients:
+                    # Проверяем, что ингредиент существует перед доступом к его атрибутам
+                    if di.ingredient is not None:
+                        ingredients[di.ingredient.name] = di.amount
                 dish = Dish(
                     id=db_dish.id,
                     name=db_dish.name,

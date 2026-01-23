@@ -493,12 +493,12 @@ bValue = bDist[field];
                 })
             });
             
-            const data = await response.json();
-            setIngredients(data.ingredients);
-            setCurrentPage('ingredients');
-        } catch (error) {
-            console.error('Ошибка при генерации меню:', error);
-        }
+        const data = await response.json();
+        setIngredients(data.ingredients);
+        setCurrentPage('shopping-list');
+    } catch (error) {
+        console.error('Ошибка при генерации меню:', error);
+    }
     };
     
     // Расчет процента выполнения цели
@@ -1146,10 +1146,47 @@ bValue = bDist[field];
                     </div>
                 )}
 
-{currentPage === 'ingredients' && (
-    <div className="card">
-        <div className="card-body">
-            <h3 className="card-title">Список ингредиентов</h3>
+                {currentPage === 'shopping-list' && (
+                    <div className="card">
+                        <div className="card-body">
+                            <h3 className="card-title">Список покупок</h3>
+                            <h4 className="mb-3">Выбранные блюда и порции</h4>
+                            <div className="mb-4">
+                                {selectedDishes.length === 0 ? (
+                                    <p className="text-muted">Нет выбранных блюд</p>
+                                ) : (
+                                    <ul className="list-group">
+                                        {selectedDishes.map(dish => (
+                                            <li key={dish.id} className="list-group-item d-flex justify-content-between align-items-center">
+                                                {dish.name}
+                                                <span className="badge bg-primary rounded-pill">{dish.portions} порц.</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+                            
+                            <h4 className="mb-3">Продукты для покупки</h4>
+                            {Object.keys(ingredients).length === 0 ? (
+                                <p className="text-muted">Список ингредиентов пуст</p>
+                            ) : (
+                                <ul className="list-group">
+                            {Object.entries(ingredients).map(([name, item]) => (
+                                <li key={name} className="list-group-item d-flex justify-content-between align-items-center">
+                                    {name}
+                                    <span className="badge bg-success rounded-pill">{item.amount} {item.unit}</span>
+                                </li>
+                            ))}
+                        </ul>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {currentPage === 'ingredients' && (
+                    <div className="card">
+                        <div className="card-body">
+                            <h3 className="card-title">Редактор ингредиентов</h3>
             <div className="mb-3">
                 <input 
                     type="text" 
