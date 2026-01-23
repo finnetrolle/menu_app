@@ -1,81 +1,139 @@
 # Class Structure Implementation
 
-This document describes the implemented class structure for the nutrition tracking system.
+This document describes the implemented class structure for the menu management system.
 
-## Classes
+## Core Models
 
-### NutritionInfo
-Contains nutritional information (КБЖУ) for ingredients or dishes.
+### Nutrition
+Represents nutritional information for ingredients or dishes.
 
 **Attributes:**
-- calories (float): Energy content in kilocalories
-- fats (float): Fat content in grams  
-- proteins (float): Protein content in grams
-- carbohydrates (float): Carbohydrate content in grams
+- energy_kcal (float): Energy content in kilocalories
+- protein_g (float): Protein content in grams
+- fat_g (float): Fat content in grams
+- carbohydrate_g (float): Carbohydrate content in grams
 
 **Usage:**
 ```python
-nutrition = NutritionInfo(
-    calories=100.0,
-    fats=5.0,
-    proteins=10.0,
-    carbohydrates=20.0
+nutrition = Nutrition(
+    energy_kcal=100.0,
+    protein_g=10.0,
+    fat_g=5.0,
+    carbohydrate_g=20.0
 )
 ```
 
 ### Ingredient
-Represents an ingredient with its name and nutritional information.
+Represents a food ingredient with its nutritional profile.
 
 **Attributes:**
+- id (int): Unique identifier
 - name (str): Name of the ingredient
-- nutrition (NutritionInfo): Nutritional information for the ingredient (calculated per 100g)
+- nutrition (Nutrition): Nutritional information per 100g
 
 **Usage:**
 ```python
 ingredient = Ingredient(
+    id=1,
     name="Молоко",
-    nutrition=NutritionInfo(
-        calories=42.0,
-        fats=3.5,
-        proteins=3.4,
-        carbohydrates=4.8
+    nutrition=Nutrition(
+        energy_kcal=42.0,
+        protein_g=3.4,
+        fat_g=3.5,
+        carbohydrate_g=4.8
     )
 )
 ```
 
 ### Dish
-Represents a dish with its ingredients and methods to calculate nutritional information.
+Represents a prepared dish composed of multiple ingredients.
 
 **Attributes:**
+- id (int): Unique identifier
 - name (str): Name of the dish
-- ingredients (Dict[str, float]): Dictionary mapping ingredient names to their weights in grams
+- ingredients (List[Dict]): List of ingredient components with amounts
+
+**Structure of ingredients:**
+```python
+[
+    {
+        "ingredient_id": 1,
+        "amount_g": 100.0,
+        "ingredient": Ingredient  # Reference to Ingredient object
+    }
+]
+```
 
 **Methods:**
-- get_total_nutrition_info(ingredient_list: list) -> NutritionInfo:
-  Calculates total nutritional information for the dish based on ingredients and their weights
+- calculate_nutrition() -> Nutrition:
+  Calculates total nutritional value of the dish based on ingredients
 - get_total_weight() -> float:
-  Calculates the total weight of the dish in grams
+  Returns total weight of the dish in grams
 
 **Usage:**
 ```python
 dish = Dish(
+    id=1,
     name="Омлет",
-    ingredients={
-        "Молоко": 100.0,
-        "Яйца": 150.0
-    }
+    ingredients=[
+        {"ingredient_id": 1, "amount_g": 100.0},
+        {"ingredient_id": 2, "amount_g": 150.0}
+    ]
 )
 
 # Calculate total nutrition for the dish
-total_nutrition = dish.get_total_nutrition_info([milk_ingredient, egg_ingredient])
+total_nutrition = dish.calculate_nutrition()
 total_weight = dish.get_total_weight()
 ```
 
+## Service Layer
+
+### NutritionCalculator
+Utility class for nutritional calculations.
+
+**Methods:**
+- calculate_ingredient_nutrition(ingredient: Ingredient, amount_g: float) -> Nutrition:
+  Calculates nutrition for specific amount of ingredient
+- calculate_dish_nutrition(ingredients: List[Dict]) -> Nutrition:
+  Aggregates nutrition values for all ingredients in a dish
+
+### DishService
+Business logic for dish management.
+
+**Methods:**
+- create_dish(name: str, ingredients: List[Dict]) -> Dish:
+  Creates and validates new dish
+- update_dish(dish_id: int, **kwargs) -> Dish:
+  Updates existing dish
+- get_dish_with_ingredients(dish_id: int) -> Dict:
+  Returns dish with full ingredient details
+
+### IngredientService
+Business logic for ingredient management.
+
+**Methods:**
+- get_all_ingredients() -> List[Ingredient]:
+  Returns all available ingredients
+- create_ingredient(**kwargs) -> Ingredient:
+  Creates new ingredient with validation
+- update_ingredient(ingredient_id: int, **kwargs) -> Ingredient:
+  Updates existing ingredient
+
 ## Implementation Details
 
-The Dish class was enhanced to:
-1. Store ingredient names and their weights in grams
-2. Calculate total nutritional information by converting per-100g values to actual amounts based on ingredient weights
-3. Calculate the total weight of the dish in grams
+The system follows these key patterns:
 
-This implementation follows the requirement that КБЖУ values are calculated for 100g as specified on product packaging.
+1. **Separation of concerns**:
+   - Models (`src/models/`) contain data structures
+   - Services (`src/services/`) contain business logic
+   - Data loaders handle persistence
+
+2. **Nutrition calculation**:
+   - All calculations are based on per-100g values
+   - Total values are proportional to ingredient amounts
+   - Uses `NutritionCalculator` for consistent calculations
+
+3. **Data flow**:
+   - Frontend → API endpoints → Service layer → Models
+   - Data loaders handle database interactions
+   - Services validate and transform data

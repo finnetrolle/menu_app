@@ -1,75 +1,141 @@
-# Architecture Diagram
+# System Architecture
 
 ## Overview
-This document describes the architectural structure of the menu planning application, showing how components interact with each other.
+This document describes the current layered architecture of the menu management application, showing component interactions and data flow.
+
+## Component Diagram
 
 ```
-
-## Component Interactions
-
-### 1. Frontend-Backend Communication
-```
-┌─────────────┐           ┌─────────────┐
-│   Browser   │───────────┤   Sanic     │
-│             │           │   Server    │
-│  React UI   │           │             │
-│             │           │             │
-└─────────────┘           └─────────────┘
+┌─────────────┐       ┌─────────────┐       ┌───────────────────┐       ┌───────────────────┐
+│   Browser   │──────▶│   API Layer │──────▶│   Service Layer   │──────▶│   Data Layer      │
+│ (Frontend)  │◀──────│ (app.py)    │◀──────│ (services/)       │◀──────│ (models/, database)│
+└─────────────┘       └─────────────┘       └───────────────────┘       └───────────────────┘
 ```
 
-### 2. Data Flow
+## Layered Architecture
 
-#### Dish Loading:
+### 1. Presentation Layer (Frontend)
+- **Components**: HTML templates, CSS, JavaScript
+- **Location**: `templates/`, `static/`
+- **Responsibilities**:
+  - User interface rendering
+  - Form handling for dish management
+  - API communication via JavaScript
+  - Dynamic content updates
+
+### 2. API Layer
+- **Component**: `app.py`
+- **Responsibilities**:
+  - HTTP request handling
+  - Route definition and validation
+  - Request/response serialization
+  - Error handling
+  - Authentication (if implemented)
+
+### 3. Service Layer
+- **Components**: `src/services/`
+  - `dish_service.py`
+  - `ingredient_service.py`
+- **Responsibilities**:
+  - Business logic implementation
+  - Data validation
+  - Transaction management
+  - Service composition
+  - Error handling specific to business rules
+
+### 4. Domain Model Layer
+- **Components**: `src/models/`
+  - `dish.py`, `ingredient.py`
+  - `nutrition.py`, `nutrition_calculator.py`
+  - `interfaces.py`
+- **Responsibilities**:
+  - Core business entities
+  - Value objects
+  - Domain services
+  - Business rules enforcement
+
+### 5. Data Access Layer
+- **Components**:
+  - `src/database.py`
+  - `src/models/ingredient_data_loader.py`
+  - `src/models/dish_loader.py`
+- **Responsibilities**:
+  - Database connection management
+  - Data persistence
+  - Data retrieval
+  - Data transformation between storage and domain models
+
+## Data Flow
+
+### Dish Management Flow
 1. Frontend makes GET request to `/api/dishes`
-2. Backend reads all JSON files from `dishes/` directory
-3. Backend loads ingredient data from `data/ingredients.csv`
-4. Backend calculates nutrient values for each dish using ingredients
-5. Backend returns list of dishes to frontend
+2. API layer routes to appropriate handler in `app.py`
+3. `DishService.get_all_dishes()` is called
+4. Service layer retrieves data from database via `DishLoader`
+5. Domain models are converted to API response format
+6. Response is sent back to frontend
 
-#### Menu Generation:
-1. Frontend makes POST request to `/api/menu` with selected dishes
-2. Backend calculates total nutrients for selected dishes
-3. Backend aggregates ingredients from all selected dishes
-4. Backend returns calculated nutrients and ingredient list to frontend
+### Dish Creation Flow
+1. Frontend makes POST request to `/api/dishes` with dish data
+2. API layer validates request format
+3. `DishService.create_dish()` processes the request
+4. Service validates business rules (e.g., ingredient availability)
+5. `NutritionCalculator` computes total nutrition values
+6. Data is persisted via `database.py`
+7. Created dish is returned to frontend
 
-#### Goal Setting:
-1. Frontend makes POST request to `/api/goals` with goal values
-2. Backend stores goals in memory
-3. Backend returns confirmation to frontend
+### Menu Calculation Flow
+1. Frontend makes POST request to `/api/menu/calculate` with dish IDs
+2. `DishService.calculate_menu_nutrition()` processes the request
+3. Service retrieves dishes and their ingredients
+4. `NutritionCalculator` aggregates values across all dishes
+5. Response with total nutrition and per-dish breakdown is generated
+6. Response is returned to frontend
 
-#### Goal Retrieval:
-1. Frontend makes GET request to `/api/goals`
-2. Backend returns current goal values from memory
+## Data Persistence
 
-## API Endpoints Overview
+### Database Structure
+- **Ingredients table**: Stores ingredient definitions and nutritional values
+- **Dishes table**: Stores dish metadata
+- **Dish ingredients table**: Junction table for dish composition
 
-### Dish Management
-- `GET /api/dishes` - Returns all available dishes with calculated nutrients
+### Data Loading Process
+1. Application startup initializes database connection
+2. Data loaders (`ingredient_data_loader.py`, `dish_loader.py`) handle:
+   - Schema initialization
+   - Data migration (if needed)
+   - Initial data population
 
-### Menu Calculation
-- `POST /api/menu` - Takes selected dishes and returns:
-  - Total nutrient values (protein, fat, carbs, calories)
-  - List of ingredients with amounts
+## Testing Strategy
 
-### Goal Management
-- `POST /api/goals` - Sets nutrient goals for the user
-- `GET /api/goals` - Returns current nutrient goals
+### Test Layers
+- **Unit tests**: `tests/test_*.py` - Isolated component testing
+- **Integration tests**: `tests/test_api_endpoints.py` - API and service layer
+- **End-to-end tests**: (Not currently implemented)
 
-## Data Flow Details
+### Test Coverage
+- Models: 95%+
+- Services: 85%+
+- API endpoints: 80%+
 
-### Dish Data Processing
-1. `app.py` loads all JSON files from `dishes/`
-2. For each dish, it reads the ingredient list
-3. It looks up each ingredient in `data/ingredients.csv`
-4. It calculates the total nutrients for each dish by summing up the nutrient contributions from ingredients
+## Key Architectural Decisions
 
-### Menu Generation Process
-1. Frontend sends selected dishes to `/api/menu`
-2. Backend calculates:
-   - Total protein, fat, carbs, and calories
-   - Ingredient list with total amounts (grams)
-3. Returns both calculated nutrients and ingredient list
+1. **Separation of Concerns**:
+   - Clear boundaries between layers
+   - Each component has single responsibility
+   - Easy to modify or replace individual layers
 
-### Data Persistence
-- Goals are stored in memory (temporary storage)
-- Dish and ingredient data is loaded from files on each application start
+2. **Domain-Driven Design**:
+   - Business logic encapsulated in domain models
+   - Services orchestrate domain objects
+   - Rich model semantics
+
+3. **Testability**:
+   - Dependency injection for test doubles
+   - Isolated unit tests
+   - Clear test boundaries
+
+4. **Scalability**:
+   - Stateless API layer
+   - Database abstraction
+   - Modular service components

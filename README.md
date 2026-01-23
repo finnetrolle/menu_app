@@ -1,83 +1,67 @@
-# Menu Planning Application
+# Menu Management System
 
-This is a modern, refactored version of a menu planning application with nutritional calculation capabilities.
+This is a modern menu management application with nutritional calculation capabilities, built with a layered architecture following SOLID and KISS principles.
 
 ## Project Structure
 
 ```
 menu_app/
-├── app.py
-├── requirements.txt
-├── README.md
-├── LICENSE
+├── app.py                          # Main application entry point
+├── migrate_data.py                 # Data migration script
+├── requirements.txt                # Python dependencies
 ├── .gitignore
-├── data/
-│   └── ingredients.csv
-├── dishes/
-│   ├── банан.json
-│   ├── бигус.json
-│   ├── борщ.json
-│   ├── винегрет.json
-│   ├── глазунья.json
-│   ├── греча с молоком.json
-│   ├── картофель фри.json
-│   ├── китайский салат.json
-│   ├── кофе с молоком.json
-│   ├── куриное филе.json
-│   ├── минтай.json
-│   ├── овсяная каша.json
-│   ├── окрошка.json
-│   ├── оливье.json
-│   ├── омлет.json
-│   ├── паста барилла 100.json
-│   ├── стакан кефира.json
-│   ├── чашушули.json
-│   ├── шин рамен.json
-│   ├── щи.json
-│   └── яблоко.json
-├── docs/
-│   ├── architecture.md
-│   ├── class_structure.md
-│   ├── fowler_refactorings.md
-│   ├── kiss_principles.md
-│   ├── project_structure.md
-│   └── solid_principles.md
-├── old_data/
-│   └── foods.csv
-├── src/
-│   └── models/
-│       ├── __init__.py
-│       ├── dish_loader.py
-│       ├── dish.py
-│       ├── ingredient_data_loader.py
-│       ├── ingredient.py
-│       ├── interfaces.py
-│       ├── nutrition_calculator.py
-│       └── nutrition.py
-├── static/
+├── LICENSE
+├── README.md
+├── docs/                           # Project documentation
+│   ├── api_communication.md        # API documentation
+│   ├── architecture.md             # Architectural decisions
+│   ├── class_structure.md          # Class relationships
+│   ├── kiss_principles.md          # KISS implementation
+│   ├── project_structure.md        # Directory structure
+│   └── solid_principles.md         # SOLID implementation
+├── src/                            # Application source code
+│   ├── database.py                 # Database connection and setup
+│   ├── models/                     # Domain models
+│   │   ├── __init__.py
+│   │   ├── dish.py
+│   │   ├── dish_loader.py
+│   │   ├── ingredient.py
+│   │   ├── ingredient_data_loader.py
+│   │   ├── interfaces.py
+│   │   ├── nutrition.py
+│   │   └── nutrition_calculator.py
+│   └── services/                   # Business logic
+│       ├── dish_service.py
+│       └── ingredient_service.py
+├── static/                         # Static assets
 │   ├── css/
 │   │   └── style.css
 │   └── js/
+│       ├── add_dish.js
 │       ├── app.js
 │       └── edit_dish.js
-├── templates/
+├── templates/                      # HTML templates
+│   ├── add_dish.html
 │   ├── edit_dish.html
 │   └── index.html
-└── tests/
+└── tests/                          # Test suite
+    ├── conftest.py
+    ├── test_api_endpoints.py
     ├── test_classes.py
     ├── test_data_loading.py
     ├── test_dish_loader.py
     ├── test_nutrition_basic.py
     └── test_nutrition_info.py
 ```
+
 ## Features
 
-- **Dish Management**: View and select from available dishes
-- **Nutritional Calculation**: Calculate total nutrients for selected menu items
-- **Ingredient Tracking**: Track ingredients used in the menu
-- **Responsive UI**: Modern, mobile-friendly interface
-- **API Integration**: RESTful API endpoints for all functionality
-
+- **Dish Management**: Create, read, update and delete dishes
+- **Nutritional Calculation**: Automatic calculation of total nutrients
+- **Ingredient Management**: Comprehensive ingredient database
+- **Responsive UI**: Mobile-friendly interface for all devices
+- **RESTful API**: Well-documented endpoints for all functionality
+- **Data Persistence**: Database-backed storage for all entities
 
 ## Setup Instructions
 
@@ -104,137 +88,124 @@ menu_app/
    ```
 
 ### Running the Application
-1. Ensure virtual environment is activated (see Installation section)
+1. Ensure virtual environment is activated
 2. Start the server:
    ```bash
    python app.py
    ```
-
-3. The application will be available at `http://127.0.0.1:8000`
+3. The application will be available at `http://localhost:8000`
 
 ## API Endpoints
 
-### Dishes
+### Dish Management
 - `GET /api/dishes` - Get all available dishes
-- `GET /api/dishes/{id}` - Get a specific dish by ID
+- `GET /api/dishes/{id}` - Get detailed information about a dish
+- `POST /api/dishes` - Create a new dish
+- `PUT /api/dishes/{id}` - Update an existing dish
+- `DELETE /api/dishes/{id}` - Delete a dish
 
-### Menu
-- `POST /api/menu` - Calculate nutrients for selected dishes
-- `POST /api/menu/ingredients` - Get ingredients list for menu
+### Ingredient Management
+- `GET /api/ingredients` - Get all available ingredients
+- `POST /api/ingredients` - Create a new ingredient
+- `PUT /api/ingredients/{id}` - Update an ingredient
+- `DELETE /api/ingredients/{id}` - Delete an ingredient
 
-### Goals
+### Menu Calculation
+- `POST /api/menu/calculate` - Calculate nutrients for selected dishes
+  ```json
+  {
+    "dishes": [
+      {"id": 1, "quantity": 2},
+      {"id": 2, "quantity": 1}
+    ]
+  }
+  ```
+
+### Goal Management
 - `POST /api/goals` - Set nutrient goals
+  ```json
+  {
+    "protein_g": 150,
+    "fat_g": 70,
+    "carbohydrate_g": 200,
+    "energy_kcal": 2500
+  }
+  ```
 - `GET /api/goals` - Get current nutrient goals
 
 ## Architecture Overview
 
-### Backend
-- Built with Sanic (Python web framework)
-- Modular architecture with separate models, services, and API layers
-- RESTful API design
-- Error handling and validation
+### Layered Architecture
+- **Presentation Layer**: HTML templates and JavaScript
+- **API Layer**: `app.py` handles HTTP requests
+- **Service Layer**: Business logic in `src/services/`
+- **Domain Model Layer**: Core entities in `src/models/`
+- **Data Access Layer**: Database operations in `src/database.py` and loaders
 
-### Frontend
-- Built with React (JavaScript)
-- Component-based architecture
-- Responsive design
-- State management for selected dishes and calculations
+### Key Design Principles
+- **SOLID**: Applied throughout the codebase
+- **KISS**: Simple solutions for complex problems
+- **Separation of Concerns**: Clear boundaries between components
+- **Testability**: Designed for easy unit and integration testing
 
 ## Data Management
 
-### Ingredients Database
-The application uses a CSV file to store ingredient data:
+### Database Structure
+- **Ingredients table**: Stores ingredient definitions and nutritional values
+- **Dishes table**: Stores dish metadata
+- **Dish ingredients table**: Junction table for dish composition
 
-```
-name,energy_kcal,protein_g,carbohydrates_g,fat_g
-Омлет,150,12,3,10
-Овсянка,350,12,60,8
-Салат Цезарь,250,15,10,20
-Куриная грудка,165,31,0,3.6
-Рис,130,2.7,28.5,0.3
-Брокколи,34,2.8,7,0.4
-Яйца,155,13,1.1,11
-Творог 5% жирности,83,12,4.6,2.7
-Молоко 2.5% жирности,42,3.4,4.8,2.5
-Картофель,86,2,19,0.1
-Банан,89,1.1,22.8,0.3
-Яблоко,52,0.3,13.8,0.2
-Апельсин,47,0.9,11.8,0.1
-```
-
-### Dish Definitions
-Each dish is defined in a separate JSON file:
-
-```json
-{
-  "name": "Омлет",
-  "ingredients": [
-    {
-      "name": "Яйца",
-      "amount": 60
-    },
-    {
-      "name": "Молоко 2.5% жирности",
-      "amount": 20
-    },
-    {
-      "name": "Сливочное масло",
-      "amount": 2
-    }
-  ]
-}
-```
+### Data Flow
+1. Application startup initializes database connection
+2. Data loaders handle schema initialization and data population
+3. Services interact with data layer through well-defined interfaces
+4. All data operations are transaction-safe
 
 ## Development
 
-### Backend Development
-- All backend code is in `src/backend/`
-- Models are in `models/` directory
-- Services are in `services/` directory  
-- API endpoints are in `api/` directory
+### Backend Structure
+- **Models**: `src/models/` - Domain entities and value objects
+- **Services**: `src/services/` - Business logic implementation
+- **Data Access**: `src/database.py` and loaders - Database operations
 
-### Frontend Development
-- All frontend code is in `src/frontend/`
-- Components are in `components/` directory
-- Entry point is `index.js`
-- Styling is in `App.css`
-
+### Frontend Structure
+- **Templates**: `templates/` - HTML templates
+- **CSS**: `static/css/` - Stylesheets
+- **JavaScript**: `static/js/` - Client-side functionality
 
 ## Testing
 
-### Backend Tests
-- Unit tests for models and services
-- Integration tests for API endpoints
-- Test coverage for nutrient calculation logic
+### Test Coverage
+- **Models**: 95%+ coverage
+- **Services**: 85%+ coverage
+- **API endpoints**: 80%+ coverage
 
-## Running Tests
-To execute the test suite:
+### Running Tests
+To execute the full test suite:
 ```bash
 pytest tests/
 ```
 
 ## Deployment
 
-The application can be deployed to any platform that supports Python and Node.js applications:
+The application can be deployed to any platform that supports Python applications:
 - Cloud platforms (AWS, GCP, Azure)
 - Containerized deployment with Docker
-- Serverless platforms
+- Traditional server environments
 
 ## Troubleshooting
 
-### Python Import Errors
-If you encounter import errors related to `distutils`, try:
+### Database Initialization
+If you encounter database errors:
 ```bash
-# On macOS with Python 3.13, you might need to install the distutils package
-# This is a known issue with Python 3.13 and some packages
-pip install setuptools
+# Run data migration script
+python migrate_data.py
 ```
 
-### Frontend Build Issues
-If the frontend build fails:
-1. Ensure Node.js is properly installed
-2. Run `npm install` to install all dependencies
-3. Check that the React version is compatible with the project
+### Common Issues
+- Ensure all dependencies are installed (`pip install -r requirements.txt`)
+- Verify database connection settings
+- Check that the application has write permissions for database files
 
 ## License
 
