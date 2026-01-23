@@ -176,3 +176,20 @@ class DishService:
         
         self.dish_loader.save(dish_data)
         self._refresh_data()
+
+    def delete_dish(self, dish_id: int) -> None:
+        """
+        Удаление блюда по ID.
+        
+        Args:
+            dish_id: ID блюда
+            
+        Raises:
+            ValueError: При невалидном ID блюда
+        """
+        if dish_id <= 0 or dish_id > len(self.raw_dishes):
+            raise ValueError("Invalid dish ID")
+        
+        # Удаляем блюдо через dish_loader
+        self.dish_loader.delete_dish(dish_id)
+        self._refresh_data()

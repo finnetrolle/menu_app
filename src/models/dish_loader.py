@@ -81,3 +81,20 @@ class DishLoader(DishLoaderInterface):
             session.commit()
         finally:
             session.close()
+
+    def delete_dish(self, dish_id: int):
+        """
+        Удаляет блюдо из базы данных по ID.
+        
+        Args:
+            dish_id: ID блюда
+        """
+        session = get_session()
+        try:
+            # Удаляем связанные ингредиенты
+            session.query(DishIngredient).filter_by(dish_id=dish_id).delete()
+            # Удаляем само блюдо
+            session.query(DbDish).filter_by(id=dish_id).delete()
+            session.commit()
+        finally:
+            session.close()
