@@ -305,6 +305,28 @@ const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
         }
     };
 
+// Обработчик удаления блюда
+const handleDeleteDish = (id) => {
+  if (confirm(`Удалить блюдо?`)) {
+    fetch(`/api/dishes/${id}`, {
+      method: 'DELETE'
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Ошибка при удалении');
+      }
+      return response.json();
+    })
+    .then(() => {
+      setDishes(dishes.filter(d => d.id !== id));
+    })
+    .catch(error => {
+      console.error('Ошибка:', error);
+      alert('Не удалось удалить блюдо');
+    });
+  }
+};
+
 // Сортировка и фильтрация данных
 // Расчет распределения калорийности по макронутриентам
 const calculateMacronutrientDistribution = (protein, fat, carbohydrates) => {
@@ -1030,6 +1052,7 @@ bValue = bDist[field];
                                                 % углеводов {sortConfig.key === 'carbsPercentage' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                                             </th>
                                             <th>Распределение</th>
+                                            <th style={{ width: '10%' }}>Действия</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1085,6 +1108,14 @@ bValue = bDist[field];
                                                                     title={`Углеводы: ${distribution.carbohydrates.toFixed(1)}%`}
                                                                 ></div>
                                                             </div>
+                                                        </td>
+                                                        <td>
+                                                            <button 
+                                                                className="btn btn-danger btn-sm"
+                                                                onClick={() => handleDeleteDish(dish.id)}
+                                                            >
+                                                                Удалить
+                                                            </button>
                                                         </td>
                                                     </tr>
                                                             {openIngredientRow === dish.id && (

@@ -186,5 +186,14 @@ async def create_dish(request):
     except ValueError as e:
         return json({"error": str(e)}, status=400)
 
+# Удаление блюда
+@app.route("/api/dishes/<id:int>", methods=["DELETE"])
+async def delete_dish(request, id):
+    try:
+        dish_service.delete_dish(id)
+        return json({"status": "success"})
+    except ValueError as e:
+        return json({"error": str(e)}, status=404)
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
