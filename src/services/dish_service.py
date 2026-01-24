@@ -42,7 +42,7 @@ class DishService:
             List[Dict]: Список блюд с расчётными значениями КБЖУ
         """
         dishes = []
-        for i, dish in enumerate(self.raw_dishes):
+        for dish in self.raw_dishes:
             ingredients_nutrition = {name: ing.nutrition for name, ing in self.ingredients.items()}
             total_nutrition = self.nutrition_calculator.calculate_total_nutrition_info(
                 ingredients_nutrition=ingredients_nutrition,
@@ -50,7 +50,7 @@ class DishService:
             )
             
             dishes.append({
-                "id": i + 1,
+                "id": dish.id,
                 "name": dish.name,
                 "weight_g": round(dish.total_weight, 2),
                 "energy_kcal": round(total_nutrition.calories, 2),
@@ -58,6 +58,7 @@ class DishService:
                 "carbohydrates_g": round(total_nutrition.carbohydrates, 2),
                 "fat_g": round(total_nutrition.fats, 2),
             })
+        dishes.sort(key=lambda x: x['name'].lower())
         return dishes
     
     def get_dish_ingredients(self, dish_id: int) -> Dict:
@@ -73,10 +74,10 @@ class DishService:
         Raises:
             ValueError: При невалидном ID блюда
         """
-        if dish_id <= 0 or dish_id > len(self.raw_dishes):
+        dish = next((d for d in self.raw_dishes if d.id == dish_id), None)
+        if not dish:
             raise ValueError("Invalid dish ID")
         
-        dish = self.raw_dishes[dish_id - 1]
         ingredients_list = []
         
         for name, amount in dish.ingredients.items():
@@ -108,7 +109,7 @@ class DishService:
                 })
         
         return {
-            "id": dish_id,
+            "id": dish.id,
             "name": dish.name,
             "ingredients": ingredients_list
         }
@@ -149,10 +150,10 @@ class DishService:
             dish_id: ID блюда
             new_ingredients: Новый список ингредиентов
         """
-        if dish_id <= 0 or dish_id > len(self.raw_dishes):
+        dish = next((d for d in self.raw_dishes if d.id == dish_id), None)
+        if not dish:
             raise ValueError("Invalid dish ID")
         
-        dish = self.raw_dishes[dish_id - 1]
         dish_data = {
             "name": dish.name,
             "ingredients": {ing["name"]: ing["amount"] for ing in new_ingredients}
@@ -187,7 +188,8 @@ class DishService:
         Raises:
             ValueError: При невалидном ID блюда
         """
-        if dish_id <= 0 or dish_id > len(self.raw_dishes):
+        dish = next((d for d in self.raw_dishes if d.id == dish_id), None)
+        if not dish:
             raise ValueError("Invalid dish ID")
         
         # Удаляем блюдо через dish_loader
