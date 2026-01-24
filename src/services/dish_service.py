@@ -58,6 +58,7 @@ class DishService:
                 "carbohydrates_g": round(total_nutrition.carbohydrates, 2),
                 "fat_g": round(total_nutrition.fats, 2),
             })
+        dishes.sort(key=lambda x: x['name'].lower())
         return dishes
     
     def get_dish_ingredients(self, dish_id: int) -> Dict:
