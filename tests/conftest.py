@@ -1,5 +1,12 @@
-import sys
-from pathlib import Path
+"""Pytest configuration for async tests."""
+import pytest
 
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
+# Configure asyncio mode
+pytest_plugins = ('pytest_asyncio',)
+
+
+def pytest_configure(config):
+    """Configure pytest with asyncio settings."""
+    config.addinivalue_line(
+        "markers", "asyncio: mark test as async"
+    )

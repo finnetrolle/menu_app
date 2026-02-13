@@ -10,7 +10,7 @@ services:
     volumes:
       - ./menu.db:/app/menu.db
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/dishes"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -22,21 +22,7 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     environment:
       - VITE_API_URL=http://backend:8000
-
-# Optional: PostgreSQL database
-#  db:
-#    image: postgres:15
-#    environment:
-#      POSTGRES_DB: menu
-#      POSTGRES_USER: menu_user
-#      POSTGRES_PASSWORD: menu_password
-#    volumes:
-#      - postgres_data:/var/lib/postgresql/data
-#    ports:
-#      - "5432:5432"
-
-#volumes:
-#  postgres_data:

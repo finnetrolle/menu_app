@@ -1,6 +1,14 @@
-Sanic==24.12.0
-sanic-ext==24.12.0
-pytest
-websockets==12.0
-sqlalchemy
-sanic-testing
+# FastAPI and dependencies
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+pydantic==2.10.0
+pydantic-settings==2.6.0
+
+# Database
+sqlalchemy==2.0.36
+alembic==1.14.0
+
+# Testing
+pytest==8.3.0
+pytest-asyncio==0.24.0
+httpx==0.28.0
