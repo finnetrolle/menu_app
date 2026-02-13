@@ -24,6 +24,12 @@ export interface IngredientInDish {
   carbohydrates?: number;
 }
 
+// Simple dish ingredient for forms (name + amount only)
+export interface DishIngredient {
+  name: string;
+  amount: number;
+}
+
 // Dish interface
 export interface Dish {
   id: number;

@@ -6,6 +6,7 @@ import { IngredientsPage } from './pages/IngredientsPage';
 import { AddDishPage } from './pages/AddDishPage';
 import { EditDishPage } from './pages/EditDishPage';
 import { MenuPlannerPage } from './pages/MenuPlannerPage';
+import { ToastProvider } from './components/ui/toast';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -20,18 +21,20 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<MenuPlannerPage />} />
-            <Route path="dishes" element={<DishesPage />} />
-            <Route path="ingredients" element={<IngredientsPage />} />
-            <Route path="add-dish" element={<AddDishPage />} />
-            <Route path="edit-dish/:id" element={<EditDishPage />} />
-            <Route path="*" element={<div className="text-center py-8 text-red-600">Страница не найдена</div>} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <ToastProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              <Route index element={<MenuPlannerPage />} />
+              <Route path="dishes" element={<DishesPage />} />
+              <Route path="ingredients" element={<IngredientsPage />} />
+              <Route path="add-dish" element={<AddDishPage />} />
+              <Route path="edit-dish/:id" element={<EditDishPage />} />
+              <Route path="*" element={<div className="text-center py-8 text-red-600">Страница не найдена</div>} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }

@@ -1,71 +1,110 @@
+"""
+Menu API routes.
+Handles menu planning and ingredient aggregation.
+"""
+
 from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from typing import Dict
+
 from src.api.schemas import (
     MenuProcessRequest,
     MenuProcessResponse,
     IngredientSummary,
     SelectedDishSummary,
     NutritionSummary,
+    BadRequestError,
 )
-from src.services.dish_service import DishService
-from src.models.dish_loader import DishLoader
-from src.models.ingredient_data_loader import IngredientDataLoader
-from src.models.nutrition_calculator import NutritionCalculator
+from src.database import get_db
+from src.repositories import DishRepository, IngredientRepository
+from src.services.nutrition_service import NutritionService
 
 router = APIRouter(tags=["menu"])
 
 
-def get_dish_service() -> DishService:
-    """Dependency to get DishService instance."""
-    dish_loader = DishLoader()
-    ingredient_loader = IngredientDataLoader()
-    nutrition_calculator = NutritionCalculator()
-    return DishService(dish_loader, ingredient_loader, nutrition_calculator)
+def get_dish_repository(db: Session = Depends(get_db)) -> DishRepository:
+    """Dependency to get DishRepository instance."""
+    return DishRepository(db)
+
+
+def get_ingredient_repository(db: Session = Depends(get_db)) -> IngredientRepository:
+    """Dependency to get IngredientRepository instance."""
+    return IngredientRepository(db)
 
 
 @router.post("/menu", response_model=MenuProcessResponse)
 async def process_menu(
     request: MenuProcessRequest,
-    service: DishService = Depends(get_dish_service)
+    dish_repo: DishRepository = Depends(get_dish_repository),
+    ing_repo: IngredientRepository = Depends(get_ingredient_repository),
 ):
-    """Process menu and calculate ingredient amounts."""
-    selected_dishes = [{"id": d.id, "portions": d.portions} for d in request.dishes]
-    result = service.process_menu(selected_dishes)
+    """
+    Process menu and calculate ingredient amounts.
     
-    # Get dish details for response
-    dish_loader = DishLoader()
+    Takes a list of selected dishes with portions and returns:
+    - List of dishes with portions
+    - Aggregated shopping list with ingredient amounts
+    - Total nutrition summary
+    """
+    if not request.dishes:
+        return MenuProcessResponse(
+            dishes=[],
+            ingredients={},
+            total_nutrition=NutritionSummary(
+                protein=0,
+                fat=0,
+                carbohydrates=0,
+                calories=0
+            )
+        )
+    
+    nutrition_service = NutritionService(dish_repo, ing_repo)
+    
+    # Get dish details and aggregate ingredients
     dishes_summary = []
-    total_protein =0.0
-    total_fat = 0.0
-    total_carbohydrates = 0.0
-    total_calories = 0.0
+    ingredients_aggregated: Dict[str, float] = {}
     
     for selected in request.dishes:
-        dish = dish_loader.get_dish_by_id(selected.id)
-        if dish:
-            dishes_summary.append(SelectedDishSummary(
-                id=selected.id,
-                name=dish.name,
-                portions=selected.portions
-            ))
-            # Calculate nutrition for this dish
-            total_protein += dish.protein_g * selected.portions
-            total_fat += dish.fat_g * selected.portions
-            total_carbohydrates += dish.carbohydrates_g * selected.portions
-            total_calories += dish.energy_kcal * selected.portions
+        dish = dish_repo.get_by_id_with_ingredients(selected.id)
+        if not dish:
+            continue
+        
+        # Add to dishes summary
+        dishes_summary.append(SelectedDishSummary(
+            id=selected.id,
+            name=dish.name,
+            portions=selected.portions
+        ))
+        
+        # Aggregate ingredients
+        for di in dish.ingredients:
+            if di.ingredient:
+                ingredient_name = di.ingredient.name
+                total_amount = di.amount * selected.portions
+                
+                if ingredient_name in ingredients_aggregated:
+                    ingredients_aggregated[ingredient_name] += total_amount
+                else:
+                    ingredients_aggregated[ingredient_name] = total_amount
+    
+    # Calculate total nutrition
+    total_nutrition = nutrition_service.calculate_menu_nutrition(
+        [{"id": d.id, "portions": d.portions} for d in request.dishes]
+    )
     
     # Convert ingredients to response format
     ingredients = {
-        name: IngredientSummary(amount=data["amount"], unit=data["unit"])
-        for name, data in result["ingredients"].items()
+        name: IngredientSummary(amount=round(amount, 2), unit="г")
+        for name, amount in sorted(ingredients_aggregated.items())
     }
     
     return MenuProcessResponse(
         dishes=dishes_summary,
         ingredients=ingredients,
         total_nutrition=NutritionSummary(
-            protein=total_protein,
-            fat=total_fat,
-            carbohydrates=total_carbohydrates,
-            calories=total_calories
+            protein=total_nutrition["protein"],
+            fat=total_nutrition["fat"],
+            carbohydrates=total_nutrition["carbohydrates"],
+            calories=total_nutrition["calories"]
         )
     )

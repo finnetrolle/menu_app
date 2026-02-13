@@ -1,93 +1,141 @@
-from fastapi import APIRouter, HTTPException, Depends
+"""
+Ingredient API routes.
+Uses repository pattern for data access.
+"""
+
+from fastapi import APIRouter, Depends, Query
 from typing import List
+
+from sqlalchemy.orm import Session
 
 from src.api.schemas import (
     IngredientResponse,
     IngredientCreate,
     NutritionCreate,
     SuccessResponse,
+    NotFoundError,
+    ConflictError,
+    BadRequestError,
 )
-from src.services.ingredient_service import IngredientService
-from src.models.ingredient_data_loader import IngredientDataLoader
+from src.database import get_db
+from src.repositories import IngredientRepository
 
 router = APIRouter(prefix="/ingredients", tags=["ingredients"])
 
 
-def get_ingredient_service() -> IngredientService:
-    """Dependency to get IngredientService instance."""
-    ingredient_loader = IngredientDataLoader()
-    return IngredientService(ingredient_loader)
+def get_ingredient_repository(db: Session = Depends(get_db)) -> IngredientRepository:
+    """Dependency to get IngredientRepository instance."""
+    return IngredientRepository(db)
 
 
 @router.get("", response_model=List[IngredientResponse])
-async def get_ingredients(service: IngredientService = Depends(get_ingredient_service)):
-    """Get all ingredients."""
-    return service.get_ingredients()
+async def get_ingredients(
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=100, description="Maximum number of records"),
+    search: str = Query(None, description="Search query for ingredient name"),
+    repo: IngredientRepository = Depends(get_ingredient_repository),
+):
+    """
+    Get all ingredients with optional search and pagination.
+    
+    Args:
+        skip: Number of records to skip for pagination
+        limit: Maximum number of records to return
+        search: Optional search query to filter by name
+        repo: Ingredient repository
+        
+    Returns:
+        List of ingredients sorted by name
+    """
+    if search:
+        ingredients = repo.search(search, limit=limit)
+    else:
+        ingredients = repo.get_all_sorted(skip=skip, limit=limit)
+    
+    return [
+        IngredientResponse(
+            id=ing.id,
+            name=ing.name,
+            nutrition=NutritionCreate(
+                calories=_calculate_calories(ing.protein_g, ing.fat_g, ing.carbohydrates_g),
+                proteins=ing.protein_g,
+                fats=ing.fat_g,
+                carbohydrates=ing.carbohydrates_g,
+            )
+        )
+        for ing in ingredients
+    ]
 
 
 @router.post("", response_model=SuccessResponse)
 async def create_ingredient(
     ingredient: IngredientCreate,
-    service: IngredientService = Depends(get_ingredient_service)
+    repo: IngredientRepository = Depends(get_ingredient_repository),
 ):
-    """Create a new ingredient."""
-    try:
-        nutrition_data = {
-            "calories": ingredient.nutrition.calories,
-            "proteins": ingredient.nutrition.proteins,
-            "fats": ingredient.nutrition.fats,
-            "carbohydrates": ingredient.nutrition.carbohydrates,
-        }
-        service.add_ingredient(ingredient.name, nutrition_data)
-        return SuccessResponse()
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    """
+    Create a new ingredient.
+    
+    Raises:
+        ConflictError: If ingredient name already exists
+    """
+    # Check if name already exists
+    if repo.name_exists(ingredient.name):
+        raise ConflictError(f"Ingredient '{ingredient.name}' already exists")
+    
+    # Create ingredient
+    repo.create_ingredient(
+        name=ingredient.name,
+        protein_g=ingredient.nutrition.proteins,
+        fat_g=ingredient.nutrition.fats,
+        carbohydrates_g=ingredient.nutrition.carbohydrates,
+    )
+    
+    return SuccessResponse(message=f"Ingredient '{ingredient.name}' created successfully")
 
 
 @router.put("/{ingredient_id}", response_model=SuccessResponse)
 async def update_ingredient(
     ingredient_id: int,
     nutrition: NutritionCreate,
-    service: IngredientService = Depends(get_ingredient_service)
+    repo: IngredientRepository = Depends(get_ingredient_repository),
 ):
-    """Update an existing ingredient."""
-    try:
-        # Get ingredient name by ID
-        ingredients_list = service.get_ingredients()
-        target = next((item for item in ingredients_list if item["id"] == ingredient_id), None)
-        
-        if not target:
-            raise HTTPException(status_code=404, detail="Ingredient not found")
-        
-        name = target["name"]
-        nutrition_data = {
-            "calories": nutrition.calories,
-            "proteins": nutrition.proteins,
-            "fats": nutrition.fats,
-            "carbohydrates": nutrition.carbohydrates,
-        }
-        service.update_ingredient(name, nutrition_data)
-        return SuccessResponse()
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    """
+    Update an existing ingredient's nutrition values.
+    
+    Raises:
+        NotFoundError: If ingredient not found
+    """
+    # Update ingredient
+    result = repo.update_nutrition(
+        ingredient_id=ingredient_id,
+        protein_g=nutrition.proteins,
+        fat_g=nutrition.fats,
+        carbohydrates_g=nutrition.carbohydrates,
+    )
+    
+    if not result:
+        raise NotFoundError("Ingredient", str(ingredient_id))
+    
+    return SuccessResponse(message="Ingredient updated successfully")
 
 
 @router.delete("/{ingredient_id}", response_model=SuccessResponse)
 async def delete_ingredient(
     ingredient_id: int,
-    service: IngredientService = Depends(get_ingredient_service)
+    repo: IngredientRepository = Depends(get_ingredient_repository),
 ):
-    """Delete an ingredient."""
-    try:
-        # Get ingredient name by ID
-        ingredients_list = service.get_ingredients()
-        target = next((item for item in ingredients_list if item["id"] == ingredient_id), None)
-        
-        if not target:
-            raise HTTPException(status_code=404, detail="Ingredient not found")
-        
-        name = target["name"]
-        service.delete_ingredient(name)
-        return SuccessResponse()
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    """
+    Delete an ingredient.
+    
+    Raises:
+        NotFoundError: If ingredient not found
+    """
+    if not repo.delete(ingredient_id):
+        raise NotFoundError("Ingredient", str(ingredient_id))
+    
+    return SuccessResponse(message="Ingredient deleted successfully")
+
+
+def _calculate_calories(proteins: float, fats: float, carbohydrates: float) -> float:
+    """Calculate calories from macros using 4-9-4 rule."""
+    return proteins * 4 + fats * 9 + carbohydrates * 4

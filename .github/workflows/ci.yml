@@ -1,83 +1,110 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop]
+    branches: [ main, develop ]
   pull_request:
-    branches: [main, develop]
+    branches: [ main, develop ]
 
 jobs:
-  test-backend:
+  # Backend tests
+  backend-tests:
     runs-on: ubuntu-latest
+    
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-      
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest pytest-cov
-      
-      - name: Run tests
-        run: pytest --cov=src tests/ --cov-report=xml
-      
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./coverage.xml
-          flags: backend
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run tests with pytest
+      run: |
+        PYTHONPATH=. pytest tests/ -v --tb=short
+    
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: htmlcov/
+        retention-days: 7
 
-  test-frontend:
+  # Frontend tests and build
+  frontend-build:
     runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: frontend
+    
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-      
-      - name: Install dependencies
-        working-directory: frontend
-        run: npm ci
-      
-      - name: Lint
-        working-directory: frontend
-        run: npm run lint
-      
-      - name: Build
-        working-directory: frontend
-        run: npm run build
+    - uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run linter
+      run: npm run lint
+    
+    - name: Build project
+      run: npm run build
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-build
+        path: frontend/dist/
+        retention-days: 7
 
+  # Docker build test
   docker-build:
     runs-on: ubuntu-latest
-    needs: [test-backend, test-frontend]
+    needs: [backend-tests, frontend-build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      
-      - name: Build backend image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile.backend
-          push: false
-          tags: menu-app-backend:latest
-      
-      - name: Build frontend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./frontend
-          push: false
-          tags: menu-app-frontend:latest
+    - uses: actions/checkout@v4
+    
+    - name: Build backend Docker image
+      run: |
+        docker build -f Dockerfile.backend -t menu-backend:${{ github.sha }} .
+    
+    - name: Build frontend Docker image
+      run: |
+        cd frontend
+        docker build -t menu-frontend:${{ github.sha }} .
+    
+    - name: Test docker-compose
+      run: |
+        docker-compose up -d
+        sleep 10
+        curl -f http://localhost:8000/health || exit 1
+        docker-compose down
+
+  # Deploy to production (manual trigger or on main branch)
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - name: Deploy notification
+      run: |
+        echo "🚀 Deployment would happen here!"
+        echo "Commit: ${{ github.sha }}"
+        echo "Author: ${{ github.actor }}"

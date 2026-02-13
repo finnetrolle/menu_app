@@ -1,3 +1,8 @@
+"""
+API schemas package.
+Provides Pydantic models for request/response validation.
+"""
+
 from .dish import (
     NutritionBase,
     NutritionCreate,
@@ -20,11 +25,23 @@ from .dish import (
     SelectedDishSummary,
     NutritionSummary,
     MenuProcessResponse,
+)
+
+from .common import (
     SuccessResponse,
     ErrorResponse,
+    DataResponse,
+    ListResponse,
+    PaginatedRequest,
+    APIError,
+    NotFoundError,
+    ValidationError,
+    ConflictError,
+    BadRequestError,
 )
 
 __all__ = [
+    # Dish schemas
     "NutritionBase",
     "NutritionCreate",
     "IngredientBase",
@@ -46,6 +63,16 @@ __all__ = [
     "SelectedDishSummary",
     "NutritionSummary",
     "MenuProcessResponse",
+    # Common schemas
     "SuccessResponse",
     "ErrorResponse",
+    "DataResponse",
+    "ListResponse",
+    "PaginatedRequest",
+    # Exceptions
+    "APIError",
+    "NotFoundError",
+    "ValidationError",
+    "ConflictError",
+    "BadRequestError",
 ]

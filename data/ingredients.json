@@ -1,0 +1,244 @@
+{
+  "ingredients": [
+    {
+      "name": "Куриная грудка",
+      "protein_g": 23.0,
+      "fat_g": 1.5,
+      "carbohydrates_g": 0.5
+    },
+    {
+      "name": "Говядина",
+      "protein_g": 20.0,
+      "fat_g": 15.0,
+      "carbohydrates_g": 0.5
+    },
+    {
+      "name": "Свинина",
+      "protein_g": 16.0,
+      "fat_g": 25.0,
+      "carbohydrates_g": 0.5
+    },
+    {
+      "name": "Рыба (треска)",
+      "protein_g": 17.0,
+      "fat_g": 0.5,
+      "carbohydrates_g": 0.0
+    },
+    {
+      "name": "Яйцо куриное",
+      "protein_g": 12.7,
+      "fat_g": 10.9,
+      "carbohydrates_g": 0.7
+    },
+    {
+      "name": "Молоко 3.2%",
+      "protein_g": 3.0,
+      "fat_g": 3.2,
+      "carbohydrates_g": 4.7
+    },
+    {
+      "name": "Сыр российский",
+      "protein_g": 24.0,
+      "fat_g": 29.0,
+      "carbohydrates_g": 0.5
+    },
+    {
+      "name": "Творог 5%",
+      "protein_g": 16.5,
+      "fat_g": 5.0,
+      "carbohydrates_g": 3.0
+    },
+    {
+      "name": "Сметана 20%",
+      "protein_g": 2.5,
+      "fat_g": 20.0,
+      "carbohydrates_g": 3.5
+    },
+    {
+      "name": "Масло сливочное",
+      "protein_g": 0.5,
+      "fat_g": 82.5,
+      "carbohydrates_g": 0.8
+    },
+    {
+      "name": "Масло подсолнечное",
+      "protein_g": 0.0,
+      "fat_g": 99.9,
+      "carbohydrates_g": 0.0
+    },
+    {
+      "name": "Масло оливковое",
+      "protein_g": 0.0,
+      "fat_g": 99.8,
+      "carbohydrates_g": 0.0
+    },
+    {
+      "name": "Рис",
+      "protein_g": 7.0,
+      "fat_g": 1.0,
+      "carbohydrates_g": 77.0
+    },
+    {
+      "name": "Гречка",
+      "protein_g": 12.6,
+      "fat_g": 3.3,
+      "carbohydrates_g": 68.0
+    },
+    {
+      "name": "Макароны",
+      "protein_g": 11.0,
+      "fat_g": 1.5,
+      "carbohydrates_g": 74.0
+    },
+    {
+      "name": "Овсянка",
+      "protein_g": 12.0,
+      "fat_g": 6.0,
+      "carbohydrates_g": 65.0
+    },
+    {
+      "name": "Хлеб белый",
+      "protein_g": 8.0,
+      "fat_g": 1.0,
+      "carbohydrates_g": 48.0
+    },
+    {
+      "name": "Хлеб черный",
+      "protein_g": 7.0,
+      "fat_g": 1.5,
+      "carbohydrates_g": 42.0
+    },
+    {
+      "name": "Картофель",
+      "protein_g": 2.0,
+      "fat_g": 0.4,
+      "carbohydrates_g": 17.0
+    },
+    {
+      "name": "Морковь",
+      "protein_g": 1.3,
+      "fat_g": 0.1,
+      "carbohydrates_g": 7.0
+    },
+    {
+      "name": "Лук репчатый",
+      "protein_g": 1.4,
+      "fat_g": 0.2,
+      "carbohydrates_g": 9.0
+    },
+    {
+      "name": "Капуста белокочанная",
+      "protein_g": 1.8,
+      "fat_g": 0.1,
+      "carbohydrates_g": 5.0
+    },
+    {
+      "name": "Помидор",
+      "protein_g": 1.1,
+      "fat_g": 0.2,
+      "carbohydrates_g": 4.0
+    },
+    {
+      "name": "Огурец",
+      "protein_g": 0.8,
+      "fat_g": 0.1,
+      "carbohydrates_g": 3.0
+    },
+    {
+      "name": "Перец болгарский",
+      "protein_g": 1.3,
+      "fat_g": 0.1,
+      "carbohydrates_g": 5.0
+    },
+    {
+      "name": "Чеснок",
+      "protein_g": 6.5,
+      "fat_g": 0.5,
+      "carbohydrates_g": 30.0
+    },
+    {
+      "name": "Салат листовой",
+      "protein_g": 1.5,
+      "fat_g": 0.2,
+      "carbohydrates_g": 2.0
+    },
+    {
+      "name": "Яблоко",
+      "protein_g": 0.4,
+      "fat_g": 0.4,
+      "carbohydrates_g": 10.0
+    },
+    {
+      "name": "Банан",
+      "protein_g": 1.5,
+      "fat_g": 0.2,
+      "carbohydrates_g": 22.0
+    },
+    {
+      "name": "Апельсин",
+      "protein_g": 0.9,
+      "fat_g": 0.2,
+      "carbohydrates_g": 9.0
+    },
+    {
+      "name": "Сахар",
+      "protein_g": 0.0,
+      "fat_g": 0.0,
+      "carbohydrates_g": 99.8
+    },
+    {
+      "name": "Соль",
+      "protein_g": 0.0,
+      "fat_g": 0.0,
+      "carbohydrates_g": 0.0
+    },
+    {
+      "name": "Перец черный молотый",
+      "protein_g": 10.0,
+      "fat_g": 3.0,
+      "carbohydrates_g": 38.0
+    },
+    {
+      "name": "Мука пшеничная",
+      "protein_g": 10.0,
+      "fat_g": 1.0,
+      "carbohydrates_g": 75.0
+    },
+    {
+      "name": "Сметана 15%",
+      "protein_g": 2.6,
+      "fat_g": 15.0,
+      "carbohydrates_g": 3.0
+    },
+    {
+      "name": "Майонез",
+      "protein_g": 2.5,
+      "fat_g": 67.0,
+      "carbohydrates_g": 4.0
+    },
+    {
+      "name": "Горох",
+      "protein_g": 22.0,
+      "fat_g": 1.5,
+      "carbohydrates_g": 57.0
+    },
+    {
+      "name": "Фасоль",
+      "protein_g": 21.0,
+      "fat_g": 1.5,
+      "carbohydrates_g": 47.0
+    },
+    {
+      "name": "Чечевица",
+      "protein_g": 24.0,
+      "fat_g": 1.5,
+      "carbohydrates_g": 53.0
+    },
+    {
+      "name": "Грибы шампиньоны",
+      "protein_g": 4.3,
+      "fat_g": 1.0,
+      "carbohydrates_g": 0.1
+    }
+  ]
+}

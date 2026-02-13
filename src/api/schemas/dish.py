@@ -150,14 +150,3 @@ class MenuProcessResponse(BaseModel):
     dishes: list[SelectedDishSummary]
     ingredients: dict[str, IngredientSummary]
     total_nutrition: NutritionSummary
-
-
-# Common responses
-class SuccessResponse(BaseModel):
-    """Generic success response."""
-    status: str = "success"
-
-
-class ErrorResponse(BaseModel):
-    """Error response."""
-    error: str
