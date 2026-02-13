@@ -1,0 +1,67 @@
+language: python
+
+python:
+  - "3.11"
+  - "3.12"
+
+# Cache pip dependencies
+cache:
+  pip: true
+  directories:
+    - frontend/node_modules
+
+# Install dependencies
+install:
+  - pip install -r requirements.txt
+  - |
+    if [ "$BUILD_FRONTEND" = "true" ]; then
+      nvm install node
+      npm --version
+      node --version
+      cd frontend && npm ci && cd ..
+    fi
+
+# Run tests
+script:
+  - pytest -v
+  - |
+    if [ "$BUILD_FRONTEND" = "true" ]; then
+      cd frontend && npm run lint && npm run build && cd ..
+    fi
+
+# Matrix configuration
+matrix:
+  include:
+    # Backend only (default)
+    - python: "3.11"
+      env: BUILD_FRONTEND=false
+    - python: "3.12"
+      env: BUILD_FRONTEND=false
+    # Full build with frontend (Python 3.12 only)
+    - python: "3.12"
+      env: BUILD_FRONTEND=true
+
+# Notifications
+notifications:
+  email:
+    on_success: change
+    on_failure: always
+
+# Branches to build
+branches:
+  only:
+    - main
+    - master
+    - develop
+    - /^feature\/.*$/
+    - /^release\/.*$/
+    - /^hotfix\/.*$/
+
+# Services (if needed for database tests)
+# services:
+#   - postgresql
+
+# Before install hooks
+before_install:
+  - python --version
+  - pip --version
