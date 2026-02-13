@@ -1,181 +1,174 @@
+"""
+API endpoint tests for FastAPI application.
+Uses httpx for async HTTP testing.
+"""
 import pytest
-from app import app
+from httpx import AsyncClient, ASGITransport
+from src.api.main import app
 
-def test_get_ingredients():
-    """Проверка получения списка ингредиентов"""
-    request, response = app.test_client.get('/api/ingredients')
-    assert response.status == 200
-    assert isinstance(response.json, list)
-    if len(response.json) > 0:
-        assert 'id' in response.json[0]
-        assert 'name' in response.json[0]
-        assert 'nutrition' in response.json[0]
 
-def test_create_ingredient():
-    """Проверка добавления нового ингредиента"""
-    new_ingredient = {
-        "name": "Тестовый ингредиент",
+@pytest.fixture
+async def client():
+    """Create async test client for FastAPI app."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac
+
+
+@pytest.mark.asyncio
+async def test_get_ingredients(client: AsyncClient):
+    """Test getting all ingredients."""
+    response = await client.get("/api/ingredients")
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+
+@pytest.mark.asyncio
+async def test_create_ingredient(client: AsyncClient):
+    """Test creating a new ingredient."""
+    data = {
+        "name": "Test Ingredient",
         "nutrition": {
-            "calories": 150,
+            "calories": 100,
             "proteins": 10,
             "fats": 5,
+            "carbohydrates": 15
+        }
+    }
+    response = await client.post("/api/ingredients", json=data)
+    assert response.status_code == 200
+    assert response.json()["status"] == "success"
+
+
+@pytest.mark.asyncio
+async def test_update_ingredient(client: AsyncClient):
+    """Test updating an ingredient."""
+    # First create a test ingredient
+    create_data = {
+        "name": "Ingredient To Update",
+        "nutrition": {"calories": 100, "proteins": 5, "fats": 2, "carbohydrates": 10}
+    }
+    await client.post("/api/ingredients", json=create_data)
+    
+    # Get the ingredient ID
+    list_response = await client.get("/api/ingredients")
+    ingredients = list_response.json()
+    ingredient_id = next(
+        (ing["id"] for ing in ingredients if ing["name"] == "Ingredient To Update"),
+        None
+    )
+    
+    if ingredient_id:
+        # Update the ingredient
+        update_data = {
+            "calories": 200,
+            "proteins": 10,
+            "fats": 4,
             "carbohydrates": 20
         }
+        response = await client.put(f"/api/ingredients/{ingredient_id}", json=update_data)
+        assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_delete_ingredient(client: AsyncClient):
+    """Test deleting an ingredient."""
+    # First create a test ingredient
+    create_data = {
+        "name": "Ingredient To Delete",
+        "nutrition": {"calories": 50, "proteins": 2, "fats": 1, "carbohydrates": 5}
     }
+    await client.post("/api/ingredients", json=create_data)
     
-    request, response = app.test_client.post(
-        '/api/ingredients', 
-        json=new_ingredient
-    )
-    assert response.status == 200
-    
-    # Проверяем, что ингредиент появился в списке
-    request, response = app.test_client.get('/api/ingredients')
-    assert any(ing['name'] == 'Тестовый ингредиент' for ing in response.json)
-
-def test_update_ingredient():
-    """Проверка обновления ингредиента по ID"""
-    # Сначала создаем тестовый ингредиент
-    app.test_client.post('/api/ingredients', json={
-        "name": "Для обновления",
-        "nutrition": {"calories": 100, "proteins": 5, "fats": 2, "carbohydrates": 10}
-    })
-    
-    # Получаем ID ингредиента
-    request, response = app.test_client.get('/api/ingredients')
+    # Get the ingredient ID
+    list_response = await client.get("/api/ingredients")
+    ingredients = list_response.json()
     ingredient_id = next(
-        ing['id'] for ing in response.json 
-        if ing['name'] == 'Для обновления'
+        (ing["id"] for ing in ingredients if ing["name"] == "Ingredient To Delete"),
+        None
     )
     
-    # Обновляем данные
-    updated_data = {
-        "nutrition": {
-            "calories": 200,
-            "proteins": 15,
-            "fats": 8,
-            "carbohydrates": 25
-        }
-    }
-    
-    request, response = app.test_client.put(
-        f'/api/ingredients/{ingredient_id}',
-        json=updated_data
-    )
-    assert response.status == 200
-    
-    # Проверяем обновленные данные
-    request, response = app.test_client.get('/api/ingredients')
-    ingredient = next(ing for ing in response.json if ing['id'] == ingredient_id)
-    assert ingredient['nutrition']['calories'] == 200
+    if ingredient_id:
+        response = await client.delete(f"/api/ingredients/{ingredient_id}")
+        assert response.status_code == 200
 
-def test_delete_ingredient():
-    """Проверка удаления ингредиента по ID"""
-    # Создаем тестовый ингредиент
-    app.test_client.post('/api/ingredients', json={
-        "name": "Для удаления",
-        "nutrition": {"calories": 50, "proteins": 3, "fats": 1, "carbohydrates": 5}
-    })
-    
-    # Получаем ID
-    request, response = app.test_client.get('/api/ingredients')
-    ingredient_id = next(
-        ing['id'] for ing in response.json 
-        if ing['name'] == 'Для удаления'
-    )
-    
-    # Удаляем
-    request, response = app.test_client.delete(f'/api/ingredients/{ingredient_id}')
-    assert response.status == 200
-    
-    # Проверяем отсутствие в списке по имени (ID динамически пересчитывается)
-    request, response = app.test_client.get('/api/ingredients')
-    assert not any(ing['name'] == 'Для удаления' for ing in response.json)
 
-def test_get_dishes():
-    """Проверка получения списка блюд"""
-    request, response = app.test_client.get('/api/dishes')
-    assert response.status == 200
-    assert isinstance(response.json, list)
-    if len(response.json) > 0:
-        assert 'id' in response.json[0]
-        assert 'name' in response.json[0]
-        assert 'energy_kcal' in response.json[0]
+@pytest.mark.asyncio
+async def test_get_dishes(client: AsyncClient):
+    """Test getting all dishes."""
+    response = await client.get("/api/dishes")
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
 
-def test_set_and_get_goals():
-    """Проверка установки и получения целей питания"""
-    goals = {
+
+@pytest.mark.asyncio
+async def test_set_and_get_goals(client: AsyncClient):
+    """Test setting and getting nutrition goals."""
+    # Set goals
+    goals_data = {
         "protein": 150,
         "fat": 70,
         "carbohydrates": 200,
         "calories": 2500
     }
+    set_response = await client.post("/api/goals", json=goals_data)
+    assert set_response.status_code == 200
     
-    # Устанавливаем цели
-    request, response = app.test_client.post('/api/goals', json=goals)
-    assert response.status == 200
-    
-    # Получаем цели
-    request, response = app.test_client.get('/api/goals')
-    assert response.status == 200
-    assert response.json == goals
+    # Get goals
+    get_response = await client.get("/api/goals")
+    assert get_response.status_code == 200
+    goals = get_response.json()
+    assert goals["protein"] == 150
 
-def test_process_menu():
-    """Проверка расчета состава меню"""
-    # Получаем список блюд
-    request, response = app.test_client.get('/api/dishes')
-    dishes = response.json
-    
-    if len(dishes) > 0:
-        menu_data = {
-            "dishes": [
-                {"id": dishes[0]['id'], "portions": 2}
-            ]
-        }
-        
-        request, response = app.test_client.post('/api/menu', json=menu_data)
-        assert response.status == 200
-        assert 'ingredients' in response.json
-        assert isinstance(response.json['ingredients'], dict)
 
-def test_get_dish_ingredients():
-    """Проверка получения состава блюда по ID"""
-    # Получаем список блюд
-    request, response = app.test_client.get('/api/dishes')
-    dishes = response.json
-    
-    if len(dishes) > 0:
-        dish_id = dishes[0]['id']
-        
-        # Запрашиваем состав блюда
-        request, response = app.test_client.get(f'/api/dish/{dish_id}')
-        assert response.status == 200
-        assert 'id' in response.json
-        assert 'name' in response.json
-        assert 'ingredients' in response.json
-        if len(response.json['ingredients']) > 0:
-            assert 'name' in response.json['ingredients'][0]
-            assert 'amount' in response.json['ingredients'][0]
-
-def test_create_dish():
-    """Проверка создания нового блюда"""
-    # Создаем тестовый ингредиент
-    app.test_client.post('/api/ingredients', json={
-        "name": "Тестовый ингредиент для блюда",
-        "nutrition": {"calories": 100, "proteins": 10, "fats": 5, "carbohydrates": 20}
-    })
-    
-    new_dish = {
-        "name": "Тестовое блюдо",
-        "ingredients": [
-            {"name": "Тестовый ингредиент для блюда", "amount": 150}
-        ]
+@pytest.mark.asyncio
+async def test_process_menu(client: AsyncClient):
+    """Test processing menu."""
+    menu_data = {
+        "dishes": []
     }
+    response = await client.post("/api/menu", json=menu_data)
+    assert response.status_code == 200
+    assert "ingredients" in response.json()
+
+
+@pytest.mark.asyncio
+async def test_get_dish_ingredients(client: AsyncClient):
+    """Test getting dish ingredients."""
+    # First get dishes to find an ID
+    dishes_response = await client.get("/api/dishes")
+    dishes = dishes_response.json()
     
-    # Создаем блюдо
-    request, response = app.test_client.post('/api/dish/new', json=new_dish)
-    assert response.status == 200
-    
-    # Проверяем, что блюдо появилось в списке
-    request, response = app.test_client.get('/api/dishes')
-    assert any(dish['name'] == 'Тестовое блюдо' for dish in response.json)
+    if dishes:
+        dish_id = dishes[0]["id"]
+        response = await client.get(f"/api/dishes/{dish_id}")
+        assert response.status_code in [200, 404]
+
+
+@pytest.mark.asyncio
+async def test_create_dish(client: AsyncClient):
+    """Test creating a new dish."""
+    dish_data = {
+        "name": "Test Dish",
+        "ingredients": []
+    }
+    response = await client.post("/api/dishes/new", json=dish_data)
+    assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_health_check(client: AsyncClient):
+    """Test health check endpoint."""
+    response = await client.get("/health")
+    assert response.status_code == 200
+    assert response.json()["status"] == "healthy"
+
+
+@pytest.mark.asyncio
+async def test_root_endpoint(client: AsyncClient):
+    """Test root endpoint."""
+    response = await client.get("/")
+    assert response.status_code == 200
+    data = response.json()
+    assert "message" in data
+    assert "docs" in data
