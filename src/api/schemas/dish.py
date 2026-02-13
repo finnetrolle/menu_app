@@ -130,9 +130,26 @@ class IngredientSummary(BaseModel):
     unit: str = "г"
 
 
+class SelectedDishSummary(BaseModel):
+    """Summary of selected dish."""
+    id: int
+    name: str
+    portions: int
+
+
+class NutritionSummary(BaseModel):
+    """Summary of total nutrition."""
+    protein: float
+    fat: float
+    carbohydrates: float
+    calories: float
+
+
 class MenuProcessResponse(BaseModel):
     """Response for menu processing."""
+    dishes: list[SelectedDishSummary]
     ingredients: dict[str, IngredientSummary]
+    total_nutrition: NutritionSummary
 
 
 # Common responses

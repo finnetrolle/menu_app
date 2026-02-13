@@ -58,7 +58,14 @@ export interface SelectedDish {
 
 // Menu processing result
 export interface MenuResult {
+  dishes: Array<{ id: number; name: string; portions: number }>;
   ingredients: Record<string, { amount: number; unit: string }>;
+  total_nutrition: {
+    protein: number;
+    fat: number;
+    carbohydrates: number;
+    calories: number;
+  };
 }
 
 // API Response types

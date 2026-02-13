@@ -3,6 +3,8 @@ from src.api.schemas import (
     MenuProcessRequest,
     MenuProcessResponse,
     IngredientSummary,
+    SelectedDishSummary,
+    NutritionSummary,
 )
 from src.services.dish_service import DishService
 from src.models.dish_loader import DishLoader
@@ -29,10 +31,41 @@ async def process_menu(
     selected_dishes = [{"id": d.id, "portions": d.portions} for d in request.dishes]
     result = service.process_menu(selected_dishes)
     
-    # Convert to response format
+    # Get dish details for response
+    dish_loader = DishLoader()
+    dishes_summary = []
+    total_protein =0.0
+    total_fat = 0.0
+    total_carbohydrates = 0.0
+    total_calories = 0.0
+    
+    for selected in request.dishes:
+        dish = dish_loader.get_dish_by_id(selected.id)
+        if dish:
+            dishes_summary.append(SelectedDishSummary(
+                id=selected.id,
+                name=dish.name,
+                portions=selected.portions
+            ))
+            # Calculate nutrition for this dish
+            total_protein += dish.protein_g * selected.portions
+            total_fat += dish.fat_g * selected.portions
+            total_carbohydrates += dish.carbohydrates_g * selected.portions
+            total_calories += dish.energy_kcal * selected.portions
+    
+    # Convert ingredients to response format
     ingredients = {
         name: IngredientSummary(amount=data["amount"], unit=data["unit"])
         for name, data in result["ingredients"].items()
     }
     
-    return MenuProcessResponse(ingredients=ingredients)
+    return MenuProcessResponse(
+        dishes=dishes_summary,
+        ingredients=ingredients,
+        total_nutrition=NutritionSummary(
+            protein=total_protein,
+            fat=total_fat,
+            carbohydrates=total_carbohydrates,
+            calories=total_calories
+        )
+    )

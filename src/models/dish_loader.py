@@ -98,3 +98,56 @@ class DishLoader(DishLoaderInterface):
             session.commit()
         finally:
             session.close()
+
+    def get_dish_by_id(self, dish_id: int):
+        """
+        Получает блюдо из базы данных по ID.
+        
+        Args:
+            dish_id: ID блюда
+            
+        Returns:
+            Dish object with nutrition info or None if not found
+        """
+        from src.models.ingredient_data_loader import IngredientDataLoader
+        from src.models.nutrition_calculator import NutritionCalculator
+        
+        session = get_session()
+        try:
+            db_dish = session.query(DbDish).filter_by(id=dish_id).first()
+            if not db_dish:
+                return None
+            
+            # Load ingredients and calculate nutrition
+            ingredient_loader = IngredientDataLoader()
+            nutrition_calculator = NutritionCalculator()
+            
+            ingredients_dict = {}
+            for di in db_dish.ingredients:
+                if di.ingredient is not None:
+                    ingredients_dict[di.ingredient.name] = di.amount
+            
+            # Create dish with nutrition info
+            dish = Dish(
+                id=db_dish.id,
+                name=db_dish.name,
+                ingredients=ingredients_dict
+            )
+            
+            # Calculate nutrition for the dish
+            # load_ingredients returns Dict[str, Ingredient], but calculate_total_nutrition_info
+            # expects Dict[str, NutritionInfo], so we need to convert
+            ingredients = ingredient_loader.load_ingredients()
+            ingredients_nutrition = {name: ing.nutrition for name, ing in ingredients.items()}
+            nutrition_info = nutrition_calculator.calculate_total_nutrition_info(ingredients_nutrition, ingredients_dict)
+            
+            # Add nutrition attributes to dish
+            dish.energy_kcal = nutrition_info.calories
+            dish.protein_g = nutrition_info.proteins
+            dish.fat_g = nutrition_info.fats
+            dish.carbohydrates_g = nutrition_info.carbohydrates
+            dish.weight_g = sum(ingredients_dict.values())
+            
+            return dish
+        finally:
+            session.close()

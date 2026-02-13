@@ -18,7 +18,7 @@ async def get_goals():
     return GoalsResponse(**_goals_storage)
 
 
-@router.post("", response_model=SuccessResponse)
+@router.post("", response_model=dict)
 async def set_goals(goals: GoalsCreate):
     """Set nutrition goals."""
     global _goals_storage
@@ -28,4 +28,4 @@ async def set_goals(goals: GoalsCreate):
         "carbohydrates": goals.carbohydrates,
         "calories": goals.calories,
     }
-    return SuccessResponse()
+    return {"status": "success", "goals": _goals_storage}

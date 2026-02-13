@@ -2,7 +2,8 @@ import { Outlet, NavLink } from 'react-router-dom';
 
 export function Layout() {
   const navLinks = [
-    { to: '/', label: 'Главная' },
+    { to: '/', label: 'Планировщик' },
+    { to: '/dishes', label: 'Блюда' },
     { to: '/ingredients', label: 'Ингредиенты' },
   ];
 
