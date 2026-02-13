@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { Dish, SortConfig } from '../types';
+import { ActionMenu } from './ui/ActionMenu';
 
 interface DishTableProps {
   dishes: Dish[];
@@ -147,24 +148,16 @@ export function DishTable({ dishes, onEdit, onDelete }: DishTableProps) {
                 </td>
                 {(onEdit || onDelete) && (
                   <td className="table-cell">
-                    <div className="flex gap-2">
-                      {onEdit && (
-                        <button
-                          onClick={() => onEdit(dish.id)}
-                          className="text-primary-600 hover:text-primary-800 text-sm"
-                        >
-                          Редактировать
-                        </button>
-                      )}
-                      {onDelete && (
-                        <button
-                          onClick={() => onDelete(dish.id)}
-                          className="text-red-600 hover:text-red-800 text-sm"
-                        >
-                          Удалить
-                        </button>
-                      )}
-                    </div>
+                    <ActionMenu
+                      items={[
+                        ...(onEdit
+                          ? [{ label: 'Редактировать', onClick: () => onEdit(dish.id) }]
+                          : []),
+                        ...(onDelete
+                          ? [{ label: 'Удалить', onClick: () => onDelete(dish.id), className: 'text-red-600' }]
+                          : []),
+                      ]}
+                    />
                   </td>
                 )}
               </tr>

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { Ingredient, SortConfig } from '../types';
+import { ActionMenu } from './ui/ActionMenu';
 
 interface IngredientTableProps {
   ingredients: Ingredient[];
@@ -123,24 +124,16 @@ export function IngredientTable({ ingredients, onEdit, onDelete }: IngredientTab
                 </td>
                 {(onEdit || onDelete) && (
                   <td className="table-cell">
-                    <div className="flex gap-2">
-                      {onEdit && (
-                        <button
-                          onClick={() => onEdit(ingredient)}
-                          className="text-primary-600 hover:text-primary-800 text-sm"
-                        >
-                          Редактировать
-                        </button>
-                      )}
-                      {onDelete && (
-                        <button
-                          onClick={() => onDelete(ingredient.id)}
-                          className="text-red-600 hover:text-red-800 text-sm"
-                        >
-                          Удалить
-                        </button>
-                      )}
-                    </div>
+                    <ActionMenu
+                      items={[
+                        ...(onEdit
+                          ? [{ label: 'Редактировать', onClick: () => onEdit(ingredient) }]
+                          : []),
+                        ...(onDelete
+                          ? [{ label: 'Удалить', onClick: () => onDelete(ingredient.id), className: 'text-red-600' }]
+                          : []),
+                      ]}
+                    />
                   </td>
                 )}
               </tr>

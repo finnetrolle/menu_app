@@ -33,16 +33,16 @@ export const dishesApi = {
     fetchJson<Dish[]>(`${API_BASE}/dishes`),
 
   getById: (id: number) => 
-    fetchJson<DishDetails>(`${API_BASE}/dish/${id}`),
+    fetchJson<DishDetails>(`${API_BASE}/dishes/${id}`),
 
   create: (data: { name: string; ingredients: { name: string; amount: number }[] }) =>
-    fetchJson<{ status: string }>(`${API_BASE}/dish/new`, {
+    fetchJson<{ status: string }>(`${API_BASE}/dishes/new`, {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   update: (id: number, ingredients: { name: string; amount: number }[]) =>
-    fetchJson<{ status: string }>(`${API_BASE}/dish/${id}`, {
+    fetchJson<{ status: string }>(`${API_BASE}/dishes/${id}`, {
       method: 'POST',
       body: JSON.stringify({ ingredients }),
     }),
